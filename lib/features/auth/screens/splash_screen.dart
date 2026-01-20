@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lottie/lottie.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/logo_widget.dart';
@@ -23,8 +25,10 @@ class _SplashScreenState extends State<SplashScreen> {
     final isLoggedIn = prefs.getBool(AppConstants.keyIsLoggedIn) ?? false;
     final isOnboarded = prefs.getBool(AppConstants.keyIsOnboarded) ?? false;
 
-    await Future.delayed(const Duration(milliseconds: 700));
+    await Future.delayed(const Duration(milliseconds: 1500));
+
     Navigator.pushReplacementNamed(context, AppConstants.routeHome);
+
     // if (isLoggedIn) {
     //   Navigator.pushReplacementNamed(context, AppConstants.routeHome);
     // } else if (!isOnboarded) {
@@ -40,13 +44,12 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: AppColors.primary,
       body: SafeArea(
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              LogoWidget(),
-              SizedBox(height: 16),
-              CircularProgressIndicator(color: AppColors.textWhite),
-            ],
+          child: Lottie.asset(
+            'assets/lottie/loading.json',
+            width: 300,
+            height: 300,
+            repeat: true,
+            fit: BoxFit.contain,
           ),
         ),
       ),

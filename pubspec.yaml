@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # State Management
-  flutter_bloc: ^8.1.6
+  flutter_bloc: ^9.1.1
   equatable: ^2.0.5
 
   # for OpenStreetMaps
@@ -47,6 +47,8 @@ dependencies:
   location: ^8.0.1
   geolocator: ^14.0.2
   flutter_polyline_points: ^3.1.0
+  lottie: ^3.1.0
+  flutter_launcher_icons: ^0.14.4
 
   # Local Storage
   shared_preferences: ^2.2.0
@@ -66,6 +68,11 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/icon.png"
+
 flutter:
 
   # The following line ensures that the Material Icons font is
@@ -77,6 +84,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/lottie/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
