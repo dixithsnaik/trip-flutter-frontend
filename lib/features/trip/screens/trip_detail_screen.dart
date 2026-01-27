@@ -22,17 +22,17 @@ class TripDetailScreen extends StatelessWidget {
 
     return BlocListener<TripBloc, TripState>(
       listener: (context, state) {
-        if (state is TripStarted) {
+        if (state.status == TripStatus.started) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Trip started')));
           NavigationHelper.safePop(context);
-        } else if (state is TripCancelled) {
+        } else if (state.status == TripStatus.cancelled) {
           NavigationHelper.safePop(context);
-        } else if (state is TripError) {
+        } else if (state.status == TripStatus.error) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage ?? 'Error')));
         }
       },
       child: Scaffold(
@@ -254,7 +254,7 @@ class TripDetailScreen extends StatelessWidget {
                               backgroundColor: AppColors.error,
                               isOutlined: true,
                               textColor: AppColors.textWhite,
-                              onPressed: state is TripLoading
+                              onPressed: state.status == TripStatus.loading
                                   ? null
                                   : () {
                                       context.read<TripBloc>().add(
@@ -268,14 +268,14 @@ class TripDetailScreen extends StatelessWidget {
                             child: CustomButton(
                               text: 'Start Trip',
                               backgroundColor: AppColors.success,
-                              onPressed: state is TripLoading
+                              onPressed: state.status == TripStatus.loading
                                   ? null
                                   : () {
                                       context.read<TripBloc>().add(
                                         StartTripEvent(tripId: tripId),
                                       );
                                     },
-                              isLoading: state is TripLoading,
+                              isLoading: state.status == TripStatus.loading,
                             ),
                           ),
                         ],

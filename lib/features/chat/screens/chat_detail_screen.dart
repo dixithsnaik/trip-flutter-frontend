@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
-import '../../../core/utils/navigation_helper.dart';
+import '../../../core/constants/app_strings.dart';
+import '../../../core/models/chat_message_model.dart';
+import '../../../core/widgets/custom_app_bar.dart';
+import '../../../core/widgets/background_widget.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
 import '../bloc/chat_state.dart';
 
 class ChatDetailScreen extends StatefulWidget {
+  final String tripId;
   final String tripName;
-  final String date;
 
   const ChatDetailScreen({
     super.key,
+    required this.tripId,
     required this.tripName,
-    required this.date,
   });
 
   @override
@@ -22,29 +26,36 @@ class ChatDetailScreen extends StatefulWidget {
 }
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
-  final _messageController = TextEditingController();
-  final String _chatId = 'chat_1';
+  final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    context.read<ChatBloc>().add(LoadChatMessagesEvent(chatId: _chatId));
+    context.read<ChatBloc>().add(LoadMessagesEvent(widget.tripId));
   }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isNotEmpty) {
-      context.read<ChatBloc>().add(
-        SendMessageEvent(
-          chatId: _chatId,
-          message: _messageController.text.trim(),
-        ),
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
       );
+    }
+  }
+
+  void _handleSendMessage() {
+    final text = _messageController.text.trim();
+    if (text.isNotEmpty) {
+      context.read<ChatBloc>().add(SendMessageEvent(tripId: widget.tripId, text: text));
       _messageController.clear();
     }
   }
@@ -52,240 +63,246 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textWhite),
-          onPressed: () => NavigationHelper.safePop(context),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppColors.headerGradient),
-        ),
-        title: Row(
+      appBar: CustomAppBar(
+        title: widget.tripName,
+        gradient: AppColors.headerGradient,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text(widget.tripName),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Trip Details'),
+                      const SizedBox(height: 8),
+                      Text('Trip ID: ${widget.tripId}'),
+                      // Add more details if available in context or arguments
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: BackgroundWidget(
+        child: Column(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryLight,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.person, color: AppColors.textWhite),
-            ),
-            const SizedBox(width: AppSizes.spacingSmall),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.tripName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textWhite,
-                    ),
-                  ),
-                  Text(
-                    'Date: ${widget.date}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textWhite,
-                    ),
-                  ),
-                ],
+              child: BlocConsumer<ChatBloc, ChatState>(
+                listener: (context, state) {
+                  if (state.status == ChatStatus.loaded) {
+                     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+                  } else if (state.status == ChatStatus.error) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(state.errorMessage ?? 'Error')),
+                    );
+                  }
+                },
+                builder: (context, state) {
+                   if (state.status == ChatStatus.loading) {
+                     return const Center(child: CircularProgressIndicator());
+                   }
+                   
+                   final messages = state.messages;
+                   if (messages.isEmpty) {
+                     return Center(
+                       child: Text(
+                         'No messages yet. Start the conversation!',
+                         style: TextStyle(color: AppColors.textSecondary),
+                       ),
+                     );
+                   }
+
+                   return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(AppSizes.screenPadding),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      final isFirstMessage = index == 0;
+                      final isNewDay = isFirstMessage ||
+                          !_isSameDay(
+                            messages[index - 1].timestamp,
+                            message.timestamp,
+                          );
+
+                      return Column(
+                        children: [
+                          if (isNewDay) _buildDateSeparator(message.timestamp),
+                          _buildMessageBubble(message),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            _buildMessageInput(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
+  }
+
+  Widget _buildDateSeparator(DateTime date) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.spacingMedium),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.spacingMedium,
+          vertical: AppSizes.spacingXSmall,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+        ),
+        child: Text(
+          DateFormat('MMMM d, yyyy').format(date),
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(ChatMessage message) {
+    return Align(
+      alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSizes.spacingSmall),
+        padding: const EdgeInsets.all(AppSizes.spacingMedium),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        decoration: BoxDecoration(
+          color: message.isMe ? AppColors.primary : AppColors.backgroundLight,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(AppSizes.radiusMedium),
+            topRight: const Radius.circular(AppSizes.radiusMedium),
+            bottomLeft: Radius.circular(
+              message.isMe ? AppSizes.radiusMedium : 0,
+            ),
+            bottomRight: Radius.circular(
+              message.isMe ? 0 : AppSizes.radiusMedium,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              message.text,
+              style: TextStyle(
+                color: message.isMe ? AppColors.textWhite : AppColors.textPrimary,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              DateFormat('h:mm a').format(message.timestamp),
+              style: TextStyle(
+                color: message.isMe
+                    ? AppColors.textWhite.withOpacity(0.7)
+                    : AppColors.textSecondary,
+                fontSize: 10,
               ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: AppColors.textWhite),
-            onPressed: () {},
+      ),
+    );
+  }
+
+  Widget _buildMessageInput() {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.screenPadding),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          color: AppColors.chatBackground,
-          image: DecorationImage(
-            image: AssetImage('assets/images/map_background.png'),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-              Colors.white.withOpacity(0.9),
-              BlendMode.dstATop,
-            ),
-            onError: (exception, stackTrace) {},
-          ),
-        ),
-        child: BlocListener<ChatBloc, ChatState>(
-          listener: (context, state) {
-            if (state is MessageSent) {
-              // Message sent successfully, reload messages
-              context.read<ChatBloc>().add(
-                LoadChatMessagesEvent(chatId: _chatId),
-              );
-            }
-          },
-          child: BlocBuilder<ChatBloc, ChatState>(
-            builder: (context, state) {
-              if (state is ChatLoading) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (state is ChatMessagesLoaded) {
-                return ListView.builder(
-                  padding: const EdgeInsets.all(AppSizes.spacingMedium),
-                  itemCount: state.messages.length,
-                  itemBuilder: (context, index) {
-                    final message = state.messages[index];
-                    if (message.isDate) {
-                      return _buildDateSeparator(message.text);
-                    }
-                    return _buildMessageBubble(
-                      context,
-                      message.text,
-                      message.isSent,
-                      message.time,
-                    );
-                  },
-                );
-              } else if (state is ChatError) {
-                return Center(
-                  child: Text(
-                    state.message,
-                    style: TextStyle(color: AppColors.error),
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(AppSizes.spacingMedium),
-        decoration: const BoxDecoration(color: AppColors.backgroundLight),
+      child: SafeArea(
         child: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.add, color: AppColors.textWhite),
+            IconButton(
+              icon: const Icon(Icons.attach_file, color: AppColors.textLight),
+              onPressed: () {},
             ),
-            const SizedBox(width: AppSizes.spacingSmall),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSizes.spacingMedium,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+                  color: AppColors.backgroundLight,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppColors.borderColor),
                 ),
                 child: TextField(
                   controller: _messageController,
                   decoration: const InputDecoration(
-                    hintText: 'Type your message',
+                    hintText: 'Type a message...',
                     border: InputBorder.none,
+                    hintStyle: TextStyle(color: AppColors.textLight),
                   ),
-                  onSubmitted: (_) => _sendMessage(),
+                  onSubmitted: (_) => _handleSendMessage(),
                 ),
               ),
             ),
             const SizedBox(width: AppSizes.spacingSmall),
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.send, color: AppColors.textWhite),
-                onPressed: _sendMessage,
-              ),
+            BlocBuilder<ChatBloc, ChatState>(
+                builder: (context, state) {
+                  return Container(
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: state.status == ChatStatus.loading 
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            ) 
+                          : const Icon(Icons.send, color: AppColors.textWhite),
+                      onPressed: state.status == ChatStatus.loading ? null : _handleSendMessage,
+                    ),
+                  );
+                }
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateSeparator(String date) {
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: AppSizes.spacingMedium),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.spacingMedium,
-          vertical: AppSizes.spacingSmall,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(AppSizes.radiusRound),
-        ),
-        child: Text(
-          date,
-          style: const TextStyle(
-            color: AppColors.textWhite,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(
-    BuildContext context,
-    String text,
-    bool isSent,
-    String? time,
-  ) {
-    return Align(
-      alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppSizes.spacingSmall),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.7,
-        ),
-        padding: const EdgeInsets.all(AppSizes.spacingMedium),
-        decoration: BoxDecoration(
-          color: isSent
-              ? AppColors.chatBubbleSent
-              : AppColors.chatBubbleReceived,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(AppSizes.radiusMedium),
-            topRight: const Radius.circular(AppSizes.radiusMedium),
-            bottomLeft: Radius.circular(isSent ? AppSizes.radiusMedium : 0),
-            bottomRight: Radius.circular(isSent ? 0 : AppSizes.radiusMedium),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              text,
-              style: TextStyle(
-                color: isSent ? AppColors.textWhite : AppColors.textPrimary,
-                fontSize: 14,
-              ),
-            ),
-            if (time != null && time.isNotEmpty) ...[
-              const SizedBox(height: AppSizes.spacingXSmall),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  time,
-                  style: TextStyle(
-                    color: isSent
-                        ? AppColors.textWhite.withOpacity(0.7)
-                        : AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),

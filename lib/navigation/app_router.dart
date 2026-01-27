@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
-import '../core/constants/app_constants.dart';
-import '../features/auth/screens/login_screen.dart';
-import '../features/auth/screens/signup_screen.dart';
-import '../features/auth/screens/verify_email_screen.dart';
-import '../features/auth/screens/otp_screen.dart';
-import '../features/auth/screens/reset_password_screen.dart';
-import '../features/onboarding/screens/onboarding_screen.dart';
-import '../features/home/screens/home_screen.dart';
-import '../features/profile/screens/profile_screen.dart';
+import 'package:tpconnect/core/constants/app_constants.dart';
+import 'package:tpconnect/features/profile/screens/profile_screen.dart';
+import '../features/home/screens/main_screen.dart';
 import '../features/chat/screens/chats_screen.dart';
 import '../features/chat/screens/chat_detail_screen.dart';
 import '../features/trip/screens/plan_trip_screen.dart';
@@ -18,23 +12,9 @@ import '../features/auth/screens/splash_screen.dart';
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case AppConstants.routeLogin:
-        return MaterialPageRoute(builder: (_) => const LoginScreen());
-      case AppConstants.routeSignUp:
-        return MaterialPageRoute(builder: (_) => const SignUpScreen());
-      case AppConstants.routeVerifyEmail:
-        return MaterialPageRoute(builder: (_) => const VerifyEmailScreen());
-      case AppConstants.routeOtp:
-        final args = settings.arguments as Map<String, dynamic>?;
-        return MaterialPageRoute(
-          builder: (_) => OtpScreen(email: args?['email'] ?? ''),
-        );
-      case AppConstants.routeResetPassword:
-        return MaterialPageRoute(builder: (_) => const ResetPasswordScreen());
-      case AppConstants.routeOnboarding:
-        return MaterialPageRoute(builder: (_) => const OnboardingScreen());
+      // ...
       case AppConstants.routeHome:
-        return MaterialPageRoute(builder: (_) => const HomeScreen());
+        return MaterialPageRoute(builder: (_) => const MainScreen());
       case AppConstants.routeProfile:
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
       case AppConstants.routeChats:
@@ -43,8 +23,8 @@ class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (_) => ChatDetailScreen(
+            tripId: 'mock_trip_id', // Need to pass tripId
             tripName: args?['tripName'] ?? 'Trip Name',
-            date: args?['date'] ?? '21/10/25',
           ),
         );
       case AppConstants.routePlanTrip:

@@ -1,11 +1,10 @@
-// map_view.dart
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:http/http.dart' as http;
-
-const String mapTilerKey = '';
+import '../bloc/map_route_bloc.dart';
+import '../bloc/map_route_event.dart';
+import '../bloc/map_route_state.dart';
 
 class MapView extends StatefulWidget {
   final List<LatLng> locations;
@@ -17,100 +16,124 @@ class MapView extends StatefulWidget {
 
 class _MapViewState extends State<MapView> {
   final MapController _mapController = MapController();
-  List<LatLng> route = [];
+  final String olaApiKey = 'hKKnYHbPpZxmBPSIwZfLvOAh7oxqxx1wCfPtbgx6';
 
-  LatLng get _initialCenter {
-    final a = widget.locations.first;
-    final b = widget.locations.last;
-    return LatLng(
-      (a.latitude + b.latitude) / 2,
-      (a.longitude + b.longitude) / 2,
-    );
-  }
+  // Fits the camera so the entire route is visible
+  void _fitRoute(List<LatLng> route) {
+    if (route.isEmpty) return;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadRoute();
-  }
-
-  Future<void> _loadRoute() async {
-    final coords = widget.locations
-        .map((p) => '${p.longitude},${p.latitude}')
-        .join(';');
-
-    final url =
-        'https://api.maptiler.com/directions/driving/geojson'
-        '?coordinates=$coords'
-        '&key=$mapTilerKey';
-
-    final res = await http.get(Uri.parse(url));
-    if (res.statusCode != 200) {
-      debugPrint(res.body);
-      return;
-    }
-
-    final data = jsonDecode(res.body);
-    final geometry = data['features'][0]['geometry']['coordinates'] as List;
-
-    route = geometry.map((c) => LatLng(c[1], c[0])).toList();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Tiny delay to ensure the widget is built
+    Future.delayed(const Duration(milliseconds: 300), () {
       final bounds = LatLngBounds.fromPoints(route);
       _mapController.fitCamera(
         CameraFit.bounds(
           bounds: bounds,
-          padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-          maxZoom: 15.5, // ~30% zoom increase
+          padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 50),
         ),
       );
     });
-
-    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        initialCenter: _initialCenter,
-        initialZoom: 9,
-        interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-        ),
+    return BlocProvider(
+      create: (context) =>
+          MapRouteBloc()..add(LoadRouteEvent(locations: widget.locations)),
+      child: BlocBuilder<MapRouteBloc, MapRouteState>(
+        builder: (context, state) {
+          // Listen for a loaded route to adjust the camera
+          if (state.status == MapRouteStatus.loaded && state.route.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) => _fitRoute(state.route),
+            );
+          }
+
+          return Scaffold(
+            body: Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: widget.locations.isNotEmpty
+                        ? widget.locations.first
+                        : const LatLng(12.9716, 77.5946),
+                    initialZoom: 13,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://api.olamaps.io/tiles/v1/styles/default-light-standard/{z}/{x}/{y}.png?api_key=$olaApiKey',
+                      userAgentPackageName: 'com.tpconnect.app',
+                      tileUpdateTransformer: TileUpdateTransformers.throttle(
+                        const Duration(milliseconds: 150),
+                      ),
+                      keepBuffer: 1,
+                      panBuffer: 0,
+                    ),
+
+                    // THE ROUTE LINE
+                    if (state.route.isNotEmpty)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: state.route,
+                            strokeWidth: 5,
+                            color: Colors.blueAccent,
+                            borderColor: Colors.blue.shade900,
+                            borderStrokeWidth: 2,
+                          ),
+                        ],
+                      ),
+
+                    // MARKERS FOR START AND END
+                    MarkerLayer(
+                      markers: widget.locations.map((pos) {
+                        final isStart = pos == widget.locations.first;
+                        return Marker(
+                          point: pos,
+                          width: 40,
+                          height: 40,
+                          child: Icon(
+                            isStart
+                                ? Icons.radio_button_checked
+                                : Icons.location_on,
+                            color: isStart ? Colors.green : Colors.red,
+                            size: 35,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+
+                // OVERLAY: LOADING SPINNER
+                if (state.isLoading)
+                  const Center(child: CircularProgressIndicator()),
+
+                // OVERLAY: ERROR BAR
+                if (state.errorMessage != null)
+                  Positioned(
+                    top: 50,
+                    left: 20,
+                    right: 20,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        state.errorMessage!,
+                        style: const TextStyle(color: Colors.white),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
-      children: [
-        TileLayer(
-          urlTemplate:
-              'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=$mapTilerKey',
-          userAgentPackageName: 'com.example.app',
-        ),
-
-        if (route.isNotEmpty)
-          PolylineLayer(
-            polylines: [
-              Polyline(points: route, strokeWidth: 7, color: Colors.red),
-            ],
-          ),
-
-        MarkerLayer(
-          markers: [
-            Marker(
-              point: widget.locations.first,
-              width: 40,
-              height: 40,
-              child: const Icon(Icons.trip_origin, color: Colors.green),
-            ),
-            Marker(
-              point: widget.locations.last,
-              width: 40,
-              height: 40,
-              child: const Icon(Icons.location_pin, color: Colors.red),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

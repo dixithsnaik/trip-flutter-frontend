@@ -109,9 +109,9 @@ class _ChatsScreenState extends State<ChatsScreen> {
                   ),
                   child: BlocBuilder<ChatBloc, ChatState>(
                     builder: (context, state) {
-                      if (state is ChatLoading) {
+                      if (state.status == ChatStatus.loading) {
                         return const Center(child: CircularProgressIndicator());
-                      } else if (state is ChatsLoaded) {
+                      } else if (state.status == ChatStatus.loaded) {
                         return ListView.builder(
                           padding: const EdgeInsets.all(AppSizes.spacingMedium),
                           itemCount: state.chats.length,
@@ -126,10 +126,10 @@ class _ChatsScreenState extends State<ChatsScreen> {
                             );
                           },
                         );
-                      } else if (state is ChatError) {
-                        return Center(
+                      } else if (state.status == ChatStatus.error) {
+                         return Center(
                           child: Text(
-                            state.message,
+                            state.errorMessage ?? 'Error',
                             style: TextStyle(color: AppColors.error),
                           ),
                         );
@@ -158,7 +158,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
         Navigator.pushNamed(
           context,
           AppConstants.routeChatDetail,
-          arguments: {'tripName': name, 'date': '21/10/25'},
+          arguments: {'tripName': name},
         );
       },
       child: Container(

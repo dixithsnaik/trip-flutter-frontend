@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../trip/bloc/trip_bloc.dart';
 import '../../trip/bloc/trip_event.dart';
 import '../../trip/bloc/trip_state.dart';
@@ -16,17 +17,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-  String _selectedTripType = 'Group Trips';
-
   @override
   void initState() {
     super.initState();
-    context.read<TripBloc>().add(LoadTripsEvent(tripType: _selectedTripType));
+    // Dispatch LoadTripsEvent when screen initializes
+    context.read<TripBloc>().add(const LoadTripsEvent());
   }
 
   @override
   Widget build(BuildContext context) {
+    // Initial Load check is no longer needed in build as initState handles it.
+    // However, if we want to ensure data is refreshed when revisiting tab, keeping it might be okay 
+    // but typically initState + pull-to-refresh is better.
+    // For now, initState is sufficient.
+
+    final ValueNotifier<int> currentIndex = ValueNotifier<int>(0);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.headerGradient),
@@ -43,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      AppConstants.appName,
+                      AppStrings.appName,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -98,188 +104,144 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.black.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedTripType = 'Group Trips';
-                          });
-                          context.read<TripBloc>().add(
-                            LoadTripsEvent(tripType: 'Group Trips'),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSizes.spacingSmall,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _selectedTripType == 'Group Trips'
-                                ? AppColors.textWhite
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(
-                              AppSizes.radiusMedium,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Group Trips',
-                              style: TextStyle(
-                                color: _selectedTripType == 'Group Trips'
-                                    ? AppColors.primary
-                                    : AppColors.textWhite,
-                                fontWeight: FontWeight.w600,
+                child: BlocBuilder<TripBloc, TripState>(
+                  buildWhen: (previous, current) => previous.selectedTripType != current.selectedTripType,
+                  builder: (context, state) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              context.read<TripBloc>().add(
+                                const SelectTripTypeEvent(AppStrings.groupTrips),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSizes.spacingSmall,
+                              ),
+                              decoration: BoxDecoration(
+                                color: state.selectedTripType == AppStrings.groupTrips
+                                    ? AppColors.textWhite
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(
+                                  AppSizes.radiusMedium,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  AppStrings.groupTrips,
+                                  style: TextStyle(
+                                    color: state.selectedTripType == AppStrings.groupTrips
+                                        ? AppColors.primary
+                                        : AppColors.textWhite,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedTripType = 'Solo Trips';
-                          });
-                          context.read<TripBloc>().add(
-                            LoadTripsEvent(tripType: 'Solo Trips'),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSizes.spacingSmall,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _selectedTripType == 'Solo Trips'
-                                ? AppColors.textWhite
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(
-                              AppSizes.radiusMedium,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Solo Trips',
-                              style: TextStyle(
-                                color: _selectedTripType == 'Solo Trips'
-                                    ? AppColors.primary
-                                    : AppColors.textWhite,
-                                fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              context.read<TripBloc>().add(
+                                const SelectTripTypeEvent(AppStrings.soloTrips),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSizes.spacingSmall,
+                              ),
+                              decoration: BoxDecoration(
+                                color: state.selectedTripType == AppStrings.soloTrips
+                                    ? AppColors.textWhite
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(
+                                  AppSizes.radiusMedium,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  AppStrings.soloTrips,
+                                  style: TextStyle(
+                                    color: state.selectedTripType == AppStrings.soloTrips
+                                        ? AppColors.primary
+                                        : AppColors.textWhite,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: AppSizes.spacingMedium),
-              // Trip List
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(AppSizes.radiusXLarge),
-                      topRight: Radius.circular(AppSizes.radiusXLarge),
+                // Trip List
+                Expanded(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(AppSizes.radiusXLarge),
+                        topRight: Radius.circular(AppSizes.radiusXLarge),
+                      ),
+                    ),
+                    child: BlocBuilder<TripBloc, TripState>(
+                      builder: (context, state) {
+                        if (state.status == TripStatus.loading) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (state.status == TripStatus.loaded) {
+                           if (state.trips.isEmpty) {
+                              return const Center(child: Text(AppStrings.noTripsFound));
+                           }
+                          return ListView.builder(
+                            padding: const EdgeInsets.all(AppSizes.screenPadding),
+                            itemCount: state.trips.length,
+                            itemBuilder: (context, index) {
+                              final trip = state.trips[index];
+                              return TripCard(
+                                tripName: trip.name,
+                                date: trip.date,
+                                checkpoints: trip.checkpoints.map((c) => c.name).toList(),
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppConstants.routeTripDetail,
+                                    arguments: {'tripName': trip.name},
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        } else if (state.status == TripStatus.error) {
+                          return Center(
+                            child: Text(
+                              state.errorMessage ?? AppStrings.errorLoadingTrips,
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
                     ),
                   ),
-                  child: BlocBuilder<TripBloc, TripState>(
-                    builder: (context, state) {
-                      if (state is TripLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (state is TripsLoaded) {
-                        return ListView.builder(
-                          padding: const EdgeInsets.all(AppSizes.screenPadding),
-                          itemCount: state.trips.length,
-                          itemBuilder: (context, index) {
-                            final trip = state.trips[index];
-                            return TripCard(
-                              tripName: trip.name,
-                              date: trip.date,
-                              checkpoints: trip.checkpoints,
-                              onTap: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppConstants.routeTripDetail,
-                                  arguments: {'tripName': trip.name},
-                                );
-                              },
-                            );
-                          },
-                        );
-                      } else if (state is TripError) {
-                        return Center(
-                          child: Text(
-                            state.message,
-                            style: TextStyle(color: AppColors.error),
-                          ),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, AppConstants.routePlanTrip);
-        },
-        backgroundColor: AppColors.textPrimary,
-        child: const Icon(Icons.add, color: AppColors.textWhite),
-      ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(AppSizes.radiusXLarge),
-          topRight: Radius.circular(AppSizes.radiusXLarge),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.pushNamed(context, AppConstants.routePlanTrip);
+          },
+          backgroundColor: AppColors.textPrimary,
+          child: const Icon(Icons.add, color: AppColors.textWhite),
         ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-            final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
-            if (index == 2) {
-              if (currentRoute != AppConstants.routeChats) {
-                Navigator.pushNamed(context, AppConstants.routeChats);
-              }
-            } else if (index == 3) {
-              if (currentRoute != AppConstants.routeProfile) {
-                Navigator.pushNamed(context, AppConstants.routeProfile);
-              }
-            }
-          });
-        },
-
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.transparent,
-        selectedItemColor: AppColors.textWhite,
-        unselectedItemColor: AppColors.textWhite.withOpacity(0.6),
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Chats',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
-    );
-  }
+      );
+    }
 }

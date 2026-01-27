@@ -46,15 +46,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is PasswordResetSuccess) {
+        if (state.status == AuthStatus.passwordResetSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Password reset successfully')),
           );
           Navigator.pushReplacementNamed(context, AppConstants.routeLogin);
-        } else if (state is AuthError) {
+        } else if (state.status == AuthStatus.error) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage ?? 'Reset failed')));
         }
       },
       child: Scaffold(
@@ -150,7 +150,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               );
                             }
                           },
-                          isLoading: state is AuthLoading,
+                          isLoading: state.status == AuthStatus.loading,
                         );
                       },
                     ),

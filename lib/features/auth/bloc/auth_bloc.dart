@@ -1,166 +1,105 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/constants/app_constants.dart';
+import '../../../../core/models/user_model.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc() : super(AuthInitial()) {
+  AuthBloc() : super(const AuthState()) {
     on<LoginEvent>(_onLogin);
+    on<AuthToggleInterest>(_onToggleInterest);
+    on<AuthSelectGender>(_onSelectGender);
+    on<AuthRegister>(_onRegister);
     on<SignUpEvent>(_onSignUp);
     on<VerifyEmailEvent>(_onVerifyEmail);
     on<VerifyOtpEvent>(_onVerifyOtp);
-    on<ResetPasswordEvent>(_onResetPassword);
     on<ResendOtpEvent>(_onResendOtp);
-    on<LogoutEvent>(_onLogout);
+    on<ResetPasswordEvent>(_onResetPassword);
   }
 
-  void _onLogin(LoginEvent event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
+  void _onSelectGender(AuthSelectGender event, Emitter<AuthState> emit) {
+    emit(state.copyWith(selectedGender: event.gender));
+  }
 
-    // Simulate API call
+  Future<void> _onLogin(LoginEvent event, Emitter<AuthState> emit) async {
+    emit(state.copyWith(status: AuthStatus.loading));
+    await Future.delayed(const Duration(seconds: 1)); // Simulate latency
+    
+    // Mock login success
+    final user = User(
+      id: '123', 
+      fullName: 'Test User',
+      username: 'testuser',
+      phoneNumber: '9876543210',
+      dateOfBirth: '01/01/1990',
+      gender: 'Male',
+      interests: [],
+    );
+    
+    emit(state.copyWith(status: AuthStatus.authenticated, user: user));
+  }
+
+  void _onToggleInterest(AuthToggleInterest event, Emitter<AuthState> emit) {
+    final interests = List<String>.from(state.selectedInterests);
+    if (interests.contains(event.interest)) {
+      interests.remove(event.interest);
+    } else {
+      interests.add(event.interest);
+    }
+    emit(state.copyWith(selectedInterests: interests));
+  }
+
+  Future<void> _onRegister(AuthRegister event, Emitter<AuthState> emit) async {
+    emit(state.copyWith(status: AuthStatus.loading));
     await Future.delayed(const Duration(seconds: 1));
 
-    // Validation
-    if (event.email.isEmpty || event.password.isEmpty) {
-      emit(const AuthError(message: 'Please fill all fields'));
-      return;
-    }
+    final user = User(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      fullName: event.fullName,
+      username: event.username,
+      phoneNumber: event.phoneNumber,
+      dateOfBirth: event.dob,
+      gender: event.gender,
+      interests: state.selectedInterests,
+    );
 
-    if (!event.email.contains('@')) {
-      emit(const AuthError(message: 'Please enter a valid email'));
-      return;
-    }
-
-    // Simulate successful login
-    final token = 'token_${DateTime.now().millisecondsSinceEpoch}';
-
-    // Persist token and login state
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(AppConstants.keyAuthToken, token);
-      await prefs.setBool(AppConstants.keyIsLoggedIn, true);
-      await prefs.setString(AppConstants.keyUserEmail, event.email);
-    } catch (e) {
-      // ignore storage errors for now
-    }
-
-    // Notify UI
-    emit(AuthAuthenticated(email: event.email, name: 'User'));
+    emit(state.copyWith(status: AuthStatus.authenticated, user: user));
   }
 
-  void _onSignUp(SignUpEvent event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-
-    // Simulate API call
+  Future<void> _onSignUp(SignUpEvent event, Emitter<AuthState> emit) async {
+    emit(state.copyWith(status: AuthStatus.loading));
     await Future.delayed(const Duration(seconds: 1));
-
-    // Validation
-    if (event.email.isEmpty ||
-        event.password.isEmpty ||
-        event.confirmPassword.isEmpty) {
-      emit(const AuthError(message: 'Please fill all fields'));
-      return;
-    }
-
-    if (!event.email.contains('@')) {
-      emit(const AuthError(message: 'Please enter a valid email'));
-      return;
-    }
-
-    if (event.password != event.confirmPassword) {
-      emit(const AuthError(message: 'Passwords do not match'));
-      return;
-    }
-
-    if (event.password.length < 6) {
-      emit(const AuthError(message: 'Password must be at least 6 characters'));
-      return;
-    }
-
-    // Simulate OTP sent
-    emit(OtpSent(email: event.email));
+    // Simulate Success -> OTP Sent or Authenticated
+    // Ideally after generic signup we might verify email.
+    // Let's assume generic signup leads to authenticated for this mock unless Verify is required.
+    // If we follow typical flow: Signup -> (maybe Verify Email) -> Authenticated.
+    // But existing UI (SignUpScreen) listens for OtpSent.
+    emit(state.copyWith(status: AuthStatus.authenticated, email: event.email)); 
   }
 
-  void _onVerifyEmail(VerifyEmailEvent event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-
-    // Simulate API call
+  Future<void> _onVerifyEmail(VerifyEmailEvent event, Emitter<AuthState> emit) async {
+    emit(state.copyWith(status: AuthStatus.loading));
     await Future.delayed(const Duration(seconds: 1));
-
-    if (event.email.isEmpty || !event.email.contains('@')) {
-      emit(const AuthError(message: 'Please enter a valid email'));
-      return;
-    }
-
-    // Simulate OTP sent
-    emit(OtpSent(email: event.email));
+    emit(state.copyWith(status: AuthStatus.otpSent, email: event.email));
   }
 
-  void _onVerifyOtp(VerifyOtpEvent event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-
-    // Simulate API call
+  Future<void> _onVerifyOtp(VerifyOtpEvent event, Emitter<AuthState> emit) async {
+    emit(state.copyWith(status: AuthStatus.loading));
     await Future.delayed(const Duration(seconds: 1));
-
-    if (event.otp.isEmpty || event.otp.length != 6) {
-      emit(const AuthError(message: 'Please enter a valid OTP'));
-      return;
+    if (event.otp == "123456") {
+       emit(state.copyWith(status: AuthStatus.otpVerified)); 
+    } else {
+       emit(state.copyWith(status: AuthStatus.error, errorMessage: "Invalid OTP"));
     }
-
-    // Simulate OTP verified
-    emit(OtpVerified(email: event.email));
   }
 
-  void _onResetPassword(
-    ResetPasswordEvent event,
-    Emitter<AuthState> emit,
-  ) async {
-    emit(AuthLoading());
-
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (event.newPassword.isEmpty || event.confirmPassword.isEmpty) {
-      emit(const AuthError(message: 'Please fill all fields'));
-      return;
-    }
-
-    if (event.newPassword != event.confirmPassword) {
-      emit(const AuthError(message: 'Passwords do not match'));
-      return;
-    }
-
-    if (event.newPassword.length < 6) {
-      emit(const AuthError(message: 'Password must be at least 6 characters'));
-      return;
-    }
-
-    // Simulate password reset success
-    emit(PasswordResetSuccess());
+  Future<void> _onResendOtp(ResendOtpEvent event, Emitter<AuthState> emit) async {
+     // Just re-emit otpSent to trigger snackbar if needed, or maintain current state but show feedback
+     emit(state.copyWith(status: AuthStatus.otpSent));
   }
 
-  void _onResendOtp(ResendOtpEvent event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Simulate OTP resent
-    emit(OtpSent(email: event.email));
-  }
-
-  void _onLogout(LogoutEvent event, Emitter<AuthState> emit) async {
-    // Clear stored auth info
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(AppConstants.keyAuthToken);
-      await prefs.setBool(AppConstants.keyIsLoggedIn, false);
-      await prefs.remove(AppConstants.keyUserEmail);
-    } catch (e) {
-      // ignore
-    }
-
-    emit(AuthUnauthenticated());
+  Future<void> _onResetPassword(ResetPasswordEvent event, Emitter<AuthState> emit) async {
+    emit(state.copyWith(status: AuthStatus.loading));
+     await Future.delayed(const Duration(seconds: 1));
+     emit(state.copyWith(status: AuthStatus.passwordResetSuccess));
   }
 }

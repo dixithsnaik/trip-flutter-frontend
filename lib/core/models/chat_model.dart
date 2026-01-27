@@ -1,0 +1,22 @@
+import 'package:equatable/equatable.dart';
+
+class ChatModel extends Equatable {
+  final String id;
+  final String name;
+  final String lastMessage;
+  final String time;
+  final int unreadCount;
+  final String? profileImage;
+
+  const ChatModel({
+    required this.id,
+    required this.name,
+    required this.lastMessage,
+    required this.time,
+    this.unreadCount = 0,
+    this.profileImage,
+  });
+
+  @override
+  List<Object?> get props => [id, name, lastMessage, time, unreadCount, profileImage];
+}

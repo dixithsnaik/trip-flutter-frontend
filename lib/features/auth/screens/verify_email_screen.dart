@@ -21,16 +21,16 @@ class VerifyEmailScreen extends StatelessWidget {
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is OtpSent) {
+        if (state.status == AuthStatus.otpSent) {
           Navigator.pushNamed(
             context,
             AppConstants.routeOtp,
-            arguments: {'email': state.email},
+            arguments: {'email': state.email ?? _emailController.text.trim()},
           );
-        } else if (state is AuthError) {
+        } else if (state.status == AuthStatus.error) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage ?? 'Verification failed')));
         }
       },
       child: Scaffold(
@@ -82,7 +82,7 @@ class VerifyEmailScreen extends StatelessWidget {
                               );
                             }
                           },
-                          isLoading: state is AuthLoading,
+                          isLoading: state.status == AuthStatus.loading,
                         );
                       },
                     ),

@@ -1,57 +1,43 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/models/user_model.dart';
 
-abstract class AuthState extends Equatable {
-  const AuthState();
+enum AuthStatus { initial, loading, authenticated, unauthenticated, error, otpSent, otpVerified, passwordResetSuccess }
 
-  @override
-  List<Object?> get props => [];
-}
+class AuthState extends Equatable {
+  final AuthStatus status;
+  final User? user;
+  final List<String> selectedInterests;
+  final String selectedGender;
+  final String? errorMessage;
+  final String? email; // For signup/verify flow
 
-class AuthInitial extends AuthState {}
-
-class AuthLoading extends AuthState {}
-
-class AuthAuthenticated extends AuthState {
-  final String email;
-  final String? name;
-
-  const AuthAuthenticated({
-    required this.email,
-    this.name,
+  const AuthState({
+    this.status = AuthStatus.initial,
+    this.user,
+    this.selectedInterests = const [],
+    this.selectedGender = 'Male',
+    this.errorMessage,
+    this.email,
   });
 
-  @override
-  List<Object?> get props => [email, name];
-}
-
-class AuthUnauthenticated extends AuthState {}
-
-class OtpSent extends AuthState {
-  final String email;
-
-  const OtpSent({required this.email});
-
-  @override
-  List<Object?> get props => [email];
-}
-
-class OtpVerified extends AuthState {
-  final String email;
-
-  const OtpVerified({required this.email});
+  AuthState copyWith({
+    AuthStatus? status,
+    User? user,
+    List<String>? selectedInterests,
+    String? selectedGender,
+    String? errorMessage,
+    String? email,
+  }) {
+    return AuthState(
+      status: status ?? this.status,
+      user: user ?? this.user,
+      selectedInterests: selectedInterests ?? this.selectedInterests,
+      selectedGender: selectedGender ?? this.selectedGender,
+      errorMessage: errorMessage ?? this.errorMessage,
+      email: email ?? this.email,
+    );
+  }
 
   @override
-  List<Object?> get props => [email];
+  List<Object?> get props => [status, user, selectedInterests, selectedGender, errorMessage, email];
 }
-
-class PasswordResetSuccess extends AuthState {}
-
-class AuthError extends AuthState {
-  final String message;
-
-  const AuthError({required this.message});
-
-  @override
-  List<Object?> get props => [message];
-}
-

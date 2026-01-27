@@ -51,12 +51,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is AuthAuthenticated) {
+        if (state.status == AuthStatus.authenticated) {
           Navigator.pushReplacementNamed(context, AppConstants.routeHome);
-        } else if (state is AuthError) {
+        } else if (state.status == AuthStatus.error) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage ?? 'Authentication failed')));
         }
       },
       child: Scaffold(
@@ -130,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return CustomButton(
                           text: 'Log In',
                           onPressed: _handleLogin,
-                          isLoading: state is AuthLoading,
+                          isLoading: state.status == AuthStatus.loading,
                         );
                       },
                     ),

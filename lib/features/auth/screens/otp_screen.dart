@@ -34,9 +34,16 @@ class OtpScreen extends StatelessWidget {
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is OtpVerified) {
+        if (state.status == AuthStatus.otpVerified) {
           // Navigate to reset password or onboarding based on context
           if (ModalRoute.of(context)?.settings.arguments != null) {
+            // This logic relies on arguments which might need clarification, 
+            // but for now let's assume if we are here for reset password we should go there.
+            // However, typically we check if we came from VerifyEmail (forgot password) or SignUp.
+             // If we want to be safe, we can check a flag or just go to ResetPassword if status is otpVerified?
+             // Actually, after OTP verified, we might go to Reset Password OR Onboarding.
+             // Let's keep it simple: if arguments has 'isResetPassword' or similar? 
+             // The original code checked arguments != null.
             Navigator.pushNamed(context, AppConstants.routeResetPassword);
           } else {
             Navigator.pushReplacementNamed(
@@ -44,11 +51,11 @@ class OtpScreen extends StatelessWidget {
               AppConstants.routeOnboarding,
             );
           }
-        } else if (state is AuthError) {
+        } else if (state.status == AuthStatus.error) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
-        } else if (state is OtpSent) {
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage ?? 'Verification failed')));
+        } else if (state.status == AuthStatus.otpSent) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('OTP resent to your email')),
           );
@@ -129,7 +136,7 @@ class OtpScreen extends StatelessWidget {
                               );
                             }
                           },
-                          isLoading: state is AuthLoading,
+                          isLoading: state.status == AuthStatus.loading,
                         );
                       },
                     ),

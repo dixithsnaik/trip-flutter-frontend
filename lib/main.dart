@@ -7,8 +7,17 @@ import 'features/auth/bloc/auth_bloc.dart';
 import 'features/trip/bloc/trip_bloc.dart';
 import 'features/chat/bloc/chat_bloc.dart';
 import 'features/profile/bloc/profile_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint('Failed to load .env: $e');
+  }
+
   runApp(const MyApp());
 }
 

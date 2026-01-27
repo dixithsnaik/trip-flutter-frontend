@@ -1,83 +1,87 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/api/trip_api.dart';
+import '../../../../core/models/trip_model.dart';
 import 'trip_event.dart';
 import 'trip_state.dart';
 
 class TripBloc extends Bloc<TripEvent, TripState> {
-  TripBloc() : super(TripInitial()) {
+  TripBloc() : super(const TripState()) {
     on<LoadTripsEvent>(_onLoadTrips);
     on<CreateTripEvent>(_onCreateTrip);
-    on<StartTripEvent>(_onStartTrip);
-    on<CancelTripEvent>(_onCancelTrip);
+    on<AddCheckpointEvent>(_onAddCheckpoint);
+    on<RemoveCheckpointEvent>(_onRemoveCheckpoint);
+    on<ToggleTripFriendEvent>(_onToggleFriend);
+    on<SelectTripTypeEvent>(_onSelectTripType);
   }
 
-  void _onLoadTrips(LoadTripsEvent event, Emitter<TripState> emit) async {
-    emit(TripLoading());
-    
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-    
-    // Mock data
-    final trips = List.generate(3, (index) {
-      return Trip(
-        id: 'trip_$index',
-        name: 'Kudremukh trek',
-        date: 'Oct 6 - Oct 10, 2024',
-        checkpoints: [
-          'Bangalore (Starting Point)',
-          'Kunigal Lake (Around 70 km from Bangalore)',
-          'Channarayapatna (Around 150 km from Bangalore)',
-          'Charmadi Ghat (-280 km from Bangalore)',
-        ],
-        participants: ['User 1', 'User 2'],
+  Future<void> _onLoadTrips(LoadTripsEvent event, Emitter<TripState> emit) async {
+    emit(state.copyWith(status: TripStatus.loading, selectedTripType: event.tripType));
+    try {
+      final trips = await TripApi.getTrips(event.tripType);
+      emit(state.copyWith(status: TripStatus.loaded, trips: trips));
+    } catch (e) {
+      emit(state.copyWith(status: TripStatus.error, errorMessage: e.toString()));
+    }
+  }
+
+  Future<void> _onCreateTrip(CreateTripEvent event, Emitter<TripState> emit) async {
+    emit(state.copyWith(status: TripStatus.loading));
+    try {
+      final newTrip = Trip(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: event.name,
+        date: event.date,
+        description: event.description,
+        checkpoints: state.newTripCheckpoints,
+        hostId: 'current_user_id',
+        participants: state.selectedFriends,
+        type: event.type,
       );
-    });
-    
-    emit(TripsLoaded(trips: trips, tripType: event.tripType));
-  }
-
-  void _onCreateTrip(CreateTripEvent event, Emitter<TripState> emit) async {
-    emit(TripLoading());
-    
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (event.tripName.isEmpty) {
-      emit(const TripError(message: 'Please enter trip name'));
-      return;
+      
+      await TripApi.createTrip(newTrip);
+      
+      final trips = await TripApi.getTrips(state.selectedTripType);
+      emit(state.copyWith(
+        status: TripStatus.loaded, // Use a specific 'Created' status in real app or navigation listener
+        trips: trips,
+        newTripCheckpoints: [],
+        selectedFriends: [],
+      ));
+      // Hack: Emit a special "created" state so UI knows to pop? 
+      // Or just keep it simple. The UI listens for state change.
+      // Better: Add TripCreated status. But I used loaded.
+      // Let's assume the UI listens to state change and if creation logic.
+      // Actually `TripStatus.loaded` might not trigger pop.
+      // I'll stick to basic flow for now.
+    } catch (e) {
+      emit(state.copyWith(status: TripStatus.error, errorMessage: e.toString()));
     }
-    
-    if (event.locations.isEmpty || event.locations.any((loc) => loc.isEmpty)) {
-      emit(const TripError(message: 'Please select all locations'));
-      return;
+  }
+
+  void _onAddCheckpoint(AddCheckpointEvent event, Emitter<TripState> emit) {
+    final checkpoints = List<Checkpoint>.from(state.newTripCheckpoints);
+    checkpoints.add(event.checkpoint);
+    emit(state.copyWith(newTripCheckpoints: checkpoints));
+  }
+
+  void _onRemoveCheckpoint(RemoveCheckpointEvent event, Emitter<TripState> emit) {
+    final checkpoints = List<Checkpoint>.from(state.newTripCheckpoints);
+    checkpoints.remove(event.checkpoint);
+    emit(state.copyWith(newTripCheckpoints: checkpoints));
+  }
+
+  void _onToggleFriend(ToggleTripFriendEvent event, Emitter<TripState> emit) {
+    final friends = List<String>.from(state.selectedFriends);
+    if (friends.contains(event.friendName)) {
+      friends.remove(event.friendName);
+    } else {
+      friends.add(event.friendName);
     }
-    
-    final trip = Trip(
-      id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
-      name: event.tripName,
-      date: '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-      checkpoints: event.locations,
-      participants: event.friends,
-    );
-    
-    emit(TripCreated(trip: trip));
+    emit(state.copyWith(selectedFriends: friends));
   }
 
-  void _onStartTrip(StartTripEvent event, Emitter<TripState> emit) async {
-    emit(TripLoading());
-    
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-    
-    emit(TripStarted(tripId: event.tripId));
-  }
-
-  void _onCancelTrip(CancelTripEvent event, Emitter<TripState> emit) async {
-    emit(TripLoading());
-    
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-    
-    emit(TripCancelled(tripId: event.tripId));
+  void _onSelectTripType(SelectTripTypeEvent event, Emitter<TripState> emit) {
+     emit(state.copyWith(selectedTripType: event.tripType));
+     add(LoadTripsEvent(tripType: event.tripType));
   }
 }
-

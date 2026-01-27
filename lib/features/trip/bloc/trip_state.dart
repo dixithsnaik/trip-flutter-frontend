@@ -1,78 +1,44 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/models/trip_model.dart';
 
-class Trip {
-  final String id;
-  final String name;
-  final String date;
-  final List<String> checkpoints;
-  final List<String> participants;
+enum TripStatus { initial, loading, loaded, error, started, cancelled }
 
-  const Trip({
-    required this.id,
-    required this.name,
-    required this.date,
-    required this.checkpoints,
-    required this.participants,
-  });
-}
-
-abstract class TripState extends Equatable {
-  const TripState();
-
-  @override
-  List<Object?> get props => [];
-}
-
-class TripInitial extends TripState {}
-
-class TripLoading extends TripState {}
-
-class TripsLoaded extends TripState {
+class TripState extends Equatable {
+  final TripStatus status;
   final List<Trip> trips;
-  final String tripType;
+  final String? errorMessage;
+  // Local state for trip creation
+  final List<Checkpoint> newTripCheckpoints;
+  final List<String> selectedFriends;
+  final String selectedTripType;
 
-  const TripsLoaded({
-    required this.trips,
-    required this.tripType,
+  const TripState({
+    this.status = TripStatus.initial,
+    this.trips = const [],
+    this.errorMessage,
+    this.newTripCheckpoints = const [],
+    this.selectedFriends = const [],
+    this.selectedTripType = 'Group Trips',
   });
 
-  @override
-  List<Object?> get props => [trips, tripType];
-}
-
-class TripCreated extends TripState {
-  final Trip trip;
-
-  const TripCreated({required this.trip});
-
-  @override
-  List<Object?> get props => [trip];
-}
-
-class TripStarted extends TripState {
-  final String tripId;
-
-  const TripStarted({required this.tripId});
-
-  @override
-  List<Object?> get props => [tripId];
-}
-
-class TripCancelled extends TripState {
-  final String tripId;
-
-  const TripCancelled({required this.tripId});
+  TripState copyWith({
+    TripStatus? status,
+    List<Trip>? trips,
+    String? errorMessage,
+    List<Checkpoint>? newTripCheckpoints,
+    List<String>? selectedFriends,
+    String? selectedTripType,
+  }) {
+    return TripState(
+      status: status ?? this.status,
+      trips: trips ?? this.trips,
+      errorMessage: errorMessage ?? this.errorMessage,
+      newTripCheckpoints: newTripCheckpoints ?? this.newTripCheckpoints,
+      selectedFriends: selectedFriends ?? this.selectedFriends,
+      selectedTripType: selectedTripType ?? this.selectedTripType,
+    );
+  }
 
   @override
-  List<Object?> get props => [tripId];
+  List<Object?> get props => [status, trips, errorMessage, newTripCheckpoints, selectedFriends, selectedTripType];
 }
-
-class TripError extends TripState {
-  final String message;
-
-  const TripError({required this.message});
-
-  @override
-  List<Object?> get props => [message];
-}
-

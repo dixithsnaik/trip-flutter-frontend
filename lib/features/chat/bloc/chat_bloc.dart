@@ -1,124 +1,71 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tpconnect/core/models/chat_model.dart' show ChatModel;
+import '../../../../core/api/trip_api.dart';
+import '../../../../core/models/chat_message_model.dart';
 import 'chat_event.dart';
 import 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
-  ChatBloc() : super(ChatInitial()) {
-    on<LoadChatsEvent>(_onLoadChats);
-    on<LoadChatMessagesEvent>(_onLoadChatMessages);
+  ChatBloc() : super(const ChatState()) {
+    on<LoadMessagesEvent>(_onLoadMessages);
     on<SendMessageEvent>(_onSendMessage);
+    on<LoadChatsEvent>(_onLoadChats);
   }
 
-  void _onLoadChats(LoadChatsEvent event, Emitter<ChatState> emit) async {
-    emit(ChatLoading());
-
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Mock data
-    final chats = [
-      const Chat(
-        id: '1',
-        name: 'Dixith',
-        lastMessage: 'done 👍',
-        time: '15:15',
-        unreadCount: 1,
-      ),
-      const Chat(
-        id: '2',
-        name: 'Nihal',
-        lastMessage: "Don't read the caption,",
-        time: '15:15',
-        unreadCount: 1,
-      ),
-      const Chat(
-        id: '3',
-        name: 'Avinash',
-        lastMessage: "You: its all same, you dumb dumb",
-        time: '15:15',
-        unreadCount: 1,
-      ),
-      const Chat(
-        id: '4',
-        name: 'Subbu',
-        lastMessage: 'You: done 👍',
-        time: '15:15',
-        unreadCount: 0,
-      ),
-    ];
-
-    emit(ChatsLoaded(chats: chats));
-  }
-
-  void _onLoadChatMessages(
-    LoadChatMessagesEvent event,
-    Emitter<ChatState> emit,
-  ) async {
-    emit(ChatLoading());
-
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Mock data
-    final messages = [
-      const ChatMessage(id: '1', text: 'Tuesday (Jan 23)', isDate: true),
-      const ChatMessage(
-        id: '2',
-        text: 'Glad to see the excitement',
-        isSent: false,
-      ),
-      const ChatMessage(
-        id: '3',
-        text: "That's very nice place!! Can't wait to attend this event.",
-        isSent: false,
-        time: '12:30 PM',
-      ),
-      const ChatMessage(
-        id: '4',
-        text: "That's very nice place!! Can't wait to attend this event.",
-        isSent: true,
-        time: '1:04 PM',
-      ),
-      const ChatMessage(id: '5', text: 'Today', isDate: true),
-      const ChatMessage(
-        id: '6',
-        text: 'Hey, shared a note. Check it out',
-        isSent: false,
-      ),
-      const ChatMessage(
-        id: '7',
-        text: "That's very nice place!! Can't wait to attend this event.",
-        isSent: true,
-        time: '1:04 PM',
-      ),
-    ];
-
-    emit(ChatMessagesLoaded(chatId: event.chatId, messages: messages));
-  }
-
-  void _onSendMessage(SendMessageEvent event, Emitter<ChatState> emit) async {
-    if (event.message.isEmpty) {
-      emit(const ChatError(message: 'Message cannot be empty'));
-      return;
+  Future<void> _onLoadChats(LoadChatsEvent event, Emitter<ChatState> emit) async {
+    emit(state.copyWith(status: ChatStatus.loading));
+    try {
+      // Mock Data for now
+      await Future.delayed(const Duration(milliseconds: 500));
+      final chats = [
+        const ChatModel(
+          id: '1', 
+          name: 'Goa Trip 2024', 
+          lastMessage: 'Pack your bags!', 
+          time: '10:30 AM',
+          unreadCount: 2,
+        ),
+        const ChatModel(
+          id: '2', 
+          name: 'Weekend Hike', 
+          lastMessage: 'Meeting point at 6 AM', 
+          time: 'Yesterday',
+        ),
+      ];
+      emit(state.copyWith(status: ChatStatus.loaded, chats: chats));
+    } catch (e) {
+      emit(state.copyWith(status: ChatStatus.error, errorMessage: e.toString()));
     }
-
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    final message = ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      text: event.message,
-      isSent: true,
-      time: _formatTime(DateTime.now()),
-    );
-
-    emit(MessageSent(message: message));
   }
 
-  String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour;
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
+  Future<void> _onLoadMessages(LoadMessagesEvent event, Emitter<ChatState> emit) async {
+    emit(state.copyWith(status: ChatStatus.loading));
+    try {
+      final messages = await TripApi.getMessages(event.tripId);
+      emit(state.copyWith(status: ChatStatus.loaded, messages: messages));
+    } catch (e) {
+      emit(state.copyWith(status: ChatStatus.error, errorMessage: e.toString()));
+    }
+  }
+
+  Future<void> _onSendMessage(SendMessageEvent event, Emitter<ChatState> emit) async {
+    // For smoother UI, we could optimistically add message, but adhering to strict mock API logic here
+    try {
+      final newMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        senderId: 'current_user_id',
+        text: event.text,
+        timestamp: DateTime.now(),
+        isMe: true,
+      );
+      
+      await TripApi.sendMessage(event.tripId, newMessage);
+      
+      // Refresh messages
+      final messages = await TripApi.getMessages(event.tripId);
+      emit(state.copyWith(status: ChatStatus.loaded, messages: messages));
+    } catch (e) {
+      emit(state.copyWith(status: ChatStatus.error, errorMessage: e.toString()));
+    }
   }
 }

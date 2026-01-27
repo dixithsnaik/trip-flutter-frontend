@@ -62,5 +62,7 @@ class AppColors {
   static const Color tripActive = success;
   static const Color tripPending = warning;
   static const Color tripCancelled = error;
-}
 
+  // Border Colors
+  static const Color borderColor = Color(0xFFE0E0E0);
+}
