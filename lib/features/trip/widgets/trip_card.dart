@@ -32,58 +32,75 @@ class TripCard extends StatelessWidget {
               Row(
                 children: [
                   // Avatars
-                  Stack(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryLight,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.person, size: 20, color: AppColors.textWhite),
-                      ),
-                      Positioned(
-                        left: 20,
-                        child: Container(
+                  SizedBox(
+                    width: 60,
+                    height: 40,
+                    child: Stack(
+                      children: [
+                        Container(
                           width: 32,
                           height: 32,
                           decoration: const BoxDecoration(
-                            color: AppColors.secondary,
+                            color: AppColors.primaryLight,
                             shape: BoxShape.circle,
-                            border: Border.fromBorderSide(
-                              BorderSide(color: AppColors.backgroundLight, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            size: 20,
+                            color: AppColors.textWhite,
+                          ),
+                        ),
+                        Positioned(
+                          left: 20,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: const BoxDecoration(
+                              color: AppColors.secondary,
+                              shape: BoxShape.circle,
+                              border: Border.fromBorderSide(
+                                BorderSide(
+                                  color: AppColors.backgroundLight,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.person,
+                              size: 20,
+                              color: AppColors.textWhite,
                             ),
                           ),
-                          child: const Icon(Icons.person, size: 20, color: AppColors.textWhite),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(width: AppSizes.spacingMedium),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          tripName,
-                          style: AppTextStyles.tripTitle,
-                        ),
+                        Text(tripName, style: AppTextStyles.tripTitle),
                         const SizedBox(height: AppSizes.spacingXSmall),
                         Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
-                            const SizedBox(width: AppSizes.spacingXSmall),
-                            Text(
-                              date,
-                              style: AppTextStyles.tripDate,
+                            const Icon(
+                              Icons.calendar_today,
+                              size: 16,
+                              color: AppColors.textSecondary,
                             ),
+                            const SizedBox(width: AppSizes.spacingXSmall),
+                            Text(date, style: AppTextStyles.tripDate),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.check_circle, color: AppColors.success, size: 24),
+                  const Icon(
+                    Icons.check_circle,
+                    color: AppColors.success,
+                    size: 24,
+                  ),
                 ],
               ),
               const SizedBox(height: AppSizes.spacingMedium),
@@ -121,7 +138,9 @@ class TripCard extends StatelessWidget {
                     const SizedBox(width: AppSizes.spacingMedium),
                     Expanded(
                       child: Padding(
-                        padding: EdgeInsets.only(bottom: isLast ? 0 : AppSizes.spacingSmall),
+                        padding: EdgeInsets.only(
+                          bottom: isLast ? 0 : AppSizes.spacingSmall,
+                        ),
                         child: Text(
                           checkpoint,
                           style: AppTextStyles.bodyMedium,
@@ -138,4 +157,3 @@ class TripCard extends StatelessWidget {
     );
   }
 }
-

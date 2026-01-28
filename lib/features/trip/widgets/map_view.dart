@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import '../bloc/map_route_bloc.dart';
 import '../bloc/map_route_event.dart';
 import '../bloc/map_route_state.dart';
@@ -16,8 +17,6 @@ class MapView extends StatefulWidget {
 
 class _MapViewState extends State<MapView> {
   final MapController _mapController = MapController();
-  final String olaApiKey = 'hKKnYHbPpZxmBPSIwZfLvOAh7oxqxx1wCfPtbgx6';
-
   // Fits the camera so the entire route is visible
   void _fitRoute(List<LatLng> route) {
     if (route.isEmpty) return;
@@ -34,6 +33,52 @@ class _MapViewState extends State<MapView> {
     });
   }
 
+  // Get current location and center map on it
+  Future<void> _centerOnCurrentLocation() async {
+    try {
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission denied')),
+          );
+          return;
+        }
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 0,
+        ),
+      );
+
+      final currentLocation = LatLng(position.latitude, position.longitude);
+
+      // Animate map to current location
+      _mapController.move(currentLocation, 15);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error getting location: $e')));
+    }
+  }
+
+  // Zoom in
+  void _zoomIn() {
+    final currentZoom = _mapController.camera.zoom;
+    _mapController.move(_mapController.camera.center, currentZoom + 1);
+  }
+
+  // Zoom out
+  void _zoomOut() {
+    final currentZoom = _mapController.camera.zoom;
+    _mapController.move(_mapController.camera.center, currentZoom - 1);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -47,7 +92,6 @@ class _MapViewState extends State<MapView> {
               (_) => _fitRoute(state.route),
             );
           }
-
           return Scaffold(
             body: Stack(
               children: [
@@ -62,8 +106,8 @@ class _MapViewState extends State<MapView> {
                   children: [
                     TileLayer(
                       urlTemplate:
-                          'https://api.olamaps.io/tiles/v1/styles/default-light-standard/{z}/{x}/{y}.png?api_key=$olaApiKey',
-                      userAgentPackageName: 'com.tpconnect.app',
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.tripconnect.app',
                       tileUpdateTransformer: TileUpdateTransformers.throttle(
                         const Duration(milliseconds: 150),
                       ),
@@ -129,6 +173,47 @@ class _MapViewState extends State<MapView> {
                       ),
                     ),
                   ),
+
+                // FLOATING ACTION BUTTONS: ZOOM (LEFT) & LOCATION (RIGHT)
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FloatingActionButton(
+                        heroTag: 'zoom_in',
+                        onPressed: _zoomIn,
+                        tooltip: 'Zoom in',
+                        backgroundColor: Colors.blue,
+                        mini: true,
+                        child: const Icon(Icons.add),
+                      ),
+                      const SizedBox(height: 4),
+                      FloatingActionButton(
+                        heroTag: 'zoom_out',
+                        onPressed: _zoomOut,
+                        tooltip: 'Zoom out',
+                        backgroundColor: Colors.blue,
+                        mini: true,
+                        child: const Icon(Icons.remove),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // FLOATING ACTION BUTTON: CENTER ON LOCATION (RIGHT)
+                Positioned(
+                  bottom: 20,
+                  right: 20,
+                  child: FloatingActionButton(
+                    heroTag: 'center_location',
+                    onPressed: _centerOnCurrentLocation,
+                    tooltip: 'Center on my location',
+                    backgroundColor: Colors.blue,
+                    child: const Icon(Icons.my_location),
+                  ),
+                ),
               ],
             ),
           );

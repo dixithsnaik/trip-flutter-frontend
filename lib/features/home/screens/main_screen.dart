@@ -14,9 +14,7 @@ class SearchScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: AppColors.background,
-      body: Center(
-        child: Text('Search Screen Implementation Pending'),
-      ),
+      body: Center(child: Text('Search Screen Implementation Pending')),
     );
   }
 }
@@ -41,12 +39,9 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // The body preserves the state of the screens using IndexedStack
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
+        padding: const EdgeInsets.only(top: AppSizes.spacingMedium),
         decoration: BoxDecoration(
           color: AppColors.primary,
           borderRadius: const BorderRadius.only(
@@ -67,13 +62,22 @@ class _MainScreenState extends State<MainScreen> {
           unselectedItemColor: AppColors.textWhite.withOpacity(0.6),
           elevation: 0,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: AppStrings.home),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: AppStrings.search),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: AppStrings.home,
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.search),
+              label: AppStrings.search,
+            ),
             BottomNavigationBarItem(
               icon: Icon(Icons.chat_bubble_outline),
               label: AppStrings.chats,
             ),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: AppStrings.profile),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: AppStrings.profile,
+            ),
           ],
         ),
       ),

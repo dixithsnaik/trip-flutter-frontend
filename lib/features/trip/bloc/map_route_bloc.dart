@@ -2,39 +2,12 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 import 'map_route_event.dart';
 import 'map_route_state.dart';
 
 class MapRouteBloc extends Bloc<MapRouteEvent, MapRouteState> {
-  // Credentials from your screenshot
-  final String clientId = '8e9c94cf-384a-4e47-9b3b-b1cfb2b214ca';
-  final String clientSecret = 'f437a83143094e41bc456dfe28f2a186';
-
   MapRouteBloc() : super(const MapRouteState()) {
     on<LoadRouteEvent>(_onLoadRoute);
-  }
-
-  // Helper to get OAuth Token
-  Future<String?> _getAccessToken() async {
-    try {
-      final response = await http.post(
-        Uri.parse('https://api.olamaps.io/auth/v1/token'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {
-          'grant_type': 'client_credentials',
-          'scope': 'openid',
-          'client_id': clientId,
-          'client_secret': clientSecret,
-        },
-      );
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body)['access_token'];
-      }
-    } catch (e) {
-      print("Auth Error: $e");
-    }
-    return null;
   }
 
   Future<void> _onLoadRoute(
@@ -44,54 +17,70 @@ class MapRouteBloc extends Bloc<MapRouteEvent, MapRouteState> {
     emit(state.copyWith(status: MapRouteStatus.loading, isLoading: true));
 
     try {
-      final token = await _getAccessToken();
-      if (token == null) throw Exception("Authentication failed");
+      if (event.locations.length < 2) {
+        throw Exception("At least 2 locations required for routing");
+      }
 
-      final origin =
-          "${event.locations.first.latitude},${event.locations.first.longitude}";
-      final destination =
-          "${event.locations.last.latitude},${event.locations.last.longitude}";
+      final List<LatLng> completePath = [];
 
-      // Notice: No api_key in the URL anymore
-      final response = await http.post(
-        Uri.parse('https://api.olamaps.io/routing/v1/directions'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', // JWT Authentication
-        },
-        body: jsonEncode({"origin": origin, "destination": destination}),
-      );
+      // Route point-to-point through all locations
+      for (int i = 0; i < event.locations.length - 1; i++) {
+        final origin = event.locations[i];
+        final destination = event.locations[i + 1];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final String? encodedPath = data['routes']?[0]?['overview_polyline'];
+        // Using OSRM (Open Source Routing Machine) - free OpenStreetMap routing
+        final coordinates =
+            "${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}";
 
-        if (encodedPath != null) {
-          final List<List<num>> decoded = decodePolyline(encodedPath);
-          final path = decoded
-              .map((c) => LatLng(c[0].toDouble(), c[1].toDouble()))
-              .toList();
-          emit(
-            state.copyWith(
-              status: MapRouteStatus.loaded,
-              route: path,
-              isLoading: false,
-            ),
-          );
-        }
-      } else {
-        emit(
-          state.copyWith(
-            status: MapRouteStatus.error,
-            errorMessage: "Error ${response.statusCode}: ${response.body}",
+        final response = await http.get(
+          Uri.parse(
+            'https://router.project-osrm.org/route/v1/driving/$coordinates?overview=full&geometries=geojson',
           ),
         );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+
+          if (data['routes'] != null && data['routes'].isNotEmpty) {
+            final route = data['routes'][0];
+            final routeCoordinates = route['geometry']['coordinates'] as List;
+
+            final segmentPath = routeCoordinates
+                .map(
+                  (coord) => LatLng(coord[1].toDouble(), coord[0].toDouble()),
+                )
+                .toList();
+
+            // Add segment to complete path, avoiding duplicate points
+            if (completePath.isNotEmpty && segmentPath.isNotEmpty) {
+              segmentPath.removeAt(
+                0,
+              ); // Remove first point to avoid duplication
+            }
+            completePath.addAll(segmentPath);
+          } else {
+            throw Exception("No routes found for segment ${i + 1}");
+          }
+        } else {
+          throw Exception(
+            "Error ${response.statusCode}: ${response.body} for segment ${i + 1}",
+          );
+        }
       }
+
+      emit(
+        state.copyWith(
+          status: MapRouteStatus.loaded,
+          route: completePath,
+          isLoading: false,
+        ),
+      );
     } catch (e) {
       emit(
         state.copyWith(
           status: MapRouteStatus.error,
           errorMessage: e.toString(),
+          isLoading: false,
         ),
       );
     }
