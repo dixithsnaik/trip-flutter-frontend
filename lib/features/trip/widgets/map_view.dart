@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+
 import '../bloc/map_route_bloc.dart';
 import '../bloc/map_route_event.dart';
 import '../bloc/map_route_state.dart';
@@ -17,81 +18,104 @@ class MapView extends StatefulWidget {
 
 class _MapViewState extends State<MapView> {
   final MapController _mapController = MapController();
-  // Fits the camera so the entire route is visible
+  late final MapRouteBloc _mapRouteBloc;
+
+  LatLng? _currentLocation;
+
+  bool _hasFittedRoute = false;
+  bool _followMyLocation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapRouteBloc = MapRouteBloc()
+      ..add(LoadRouteEvent(locations: widget.locations));
+  }
+
+  @override
+  void dispose() {
+    _mapRouteBloc.close();
+    super.dispose();
+  }
+
+  /// Fit route camera (used for toggle)
   void _fitRoute(List<LatLng> route) {
     if (route.isEmpty) return;
 
-    // Tiny delay to ensure the widget is built
-    Future.delayed(const Duration(milliseconds: 300), () {
-      final bounds = LatLngBounds.fromPoints(route);
-      _mapController.fitCamera(
-        CameraFit.bounds(
-          bounds: bounds,
-          padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 50),
-        ),
-      );
-    });
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: LatLngBounds.fromPoints(route),
+        padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 50),
+      ),
+    );
   }
 
-  // Get current location and center map on it
+  /// Center & mark current location
   Future<void> _centerOnCurrentLocation() async {
     try {
-      // Check location permissions
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permission denied')),
-          );
-          return;
-        }
+        if (permission == LocationPermission.denied) return;
       }
 
-      // Get current position
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 0,
         ),
       );
 
-      final currentLocation = LatLng(position.latitude, position.longitude);
+      final location = LatLng(position.latitude, position.longitude);
 
-      // Animate map to current location
-      _mapController.move(currentLocation, 15);
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error getting location: $e')));
+      setState(() {
+        _currentLocation = location;
+      });
+
+      _mapController.move(location, 15);
+    } catch (_) {}
+  }
+
+  void _toggleLocationMode() async {
+    if (_followMyLocation) {
+      // Switch to route view
+      setState(() => _followMyLocation = false);
+      _fitRoute(_mapRouteBloc.state.route);
+    } else {
+      // Switch to follow location
+      await _centerOnCurrentLocation();
+      setState(() => _followMyLocation = true);
     }
   }
 
-  // Zoom in
   void _zoomIn() {
-    final currentZoom = _mapController.camera.zoom;
-    _mapController.move(_mapController.camera.center, currentZoom + 1);
+    _mapController.move(
+      _mapController.camera.center,
+      _mapController.camera.zoom + 1,
+    );
   }
 
-  // Zoom out
   void _zoomOut() {
-    final currentZoom = _mapController.camera.zoom;
-    _mapController.move(_mapController.camera.center, currentZoom - 1);
+    _mapController.move(
+      _mapController.camera.center,
+      _mapController.camera.zoom - 1,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          MapRouteBloc()..add(LoadRouteEvent(locations: widget.locations)),
+    return BlocProvider.value(
+      value: _mapRouteBloc,
       child: BlocBuilder<MapRouteBloc, MapRouteState>(
         builder: (context, state) {
-          // Listen for a loaded route to adjust the camera
-          if (state.status == MapRouteStatus.loaded && state.route.isNotEmpty) {
+          if (state.status == MapRouteStatus.loaded &&
+              state.route.isNotEmpty &&
+              !_hasFittedRoute) {
+            _hasFittedRoute = true;
             WidgetsBinding.instance.addPostFrameCallback(
               (_) => _fitRoute(state.route),
             );
           }
+
           return Scaffold(
             body: Stack(
               children: [
@@ -104,18 +128,14 @@ class _MapViewState extends State<MapView> {
                     initialZoom: 13,
                   ),
                   children: [
+                    /// MAP TILES
                     TileLayer(
                       urlTemplate:
                           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.tripconnect.app',
-                      tileUpdateTransformer: TileUpdateTransformers.throttle(
-                        const Duration(milliseconds: 150),
-                      ),
-                      keepBuffer: 1,
-                      panBuffer: 0,
                     ),
 
-                    // THE ROUTE LINE
+                    /// ROUTE LINE
                     if (state.route.isNotEmpty)
                       PolylineLayer(
                         polylines: [
@@ -129,7 +149,7 @@ class _MapViewState extends State<MapView> {
                         ],
                       ),
 
-                    // MARKERS FOR START AND END
+                    /// ROUTE MARKERS
                     MarkerLayer(
                       markers: widget.locations.map((pos) {
                         final isStart = pos == widget.locations.first;
@@ -147,14 +167,36 @@ class _MapViewState extends State<MapView> {
                         );
                       }).toList(),
                     ),
+
+                    /// CURRENT LOCATION MARKER
+                    if (_currentLocation != null)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: _currentLocation!,
+                            width: 24,
+                            height: 24,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.blue,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 3,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
 
-                // OVERLAY: LOADING SPINNER
+                /// LOADING
                 if (state.isLoading)
                   const Center(child: CircularProgressIndicator()),
 
-                // OVERLAY: ERROR BAR
+                /// ERROR
                 if (state.errorMessage != null)
                   Positioned(
                     top: 50,
@@ -174,44 +216,44 @@ class _MapViewState extends State<MapView> {
                     ),
                   ),
 
-                // FLOATING ACTION BUTTONS: ZOOM (LEFT) & LOCATION (RIGHT)
+                /// ZOOM CONTROLS
                 Positioned(
                   bottom: 20,
                   left: 20,
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       FloatingActionButton(
                         heroTag: 'zoom_in',
-                        onPressed: _zoomIn,
-                        tooltip: 'Zoom in',
-                        backgroundColor: Colors.blue,
                         mini: true,
+                        backgroundColor: Colors.blue,
+                        onPressed: _zoomIn,
                         child: const Icon(Icons.add),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       FloatingActionButton(
                         heroTag: 'zoom_out',
-                        onPressed: _zoomOut,
-                        tooltip: 'Zoom out',
-                        backgroundColor: Colors.blue,
                         mini: true,
+                        backgroundColor: Colors.blue,
+                        onPressed: _zoomOut,
                         child: const Icon(Icons.remove),
                       ),
                     ],
                   ),
                 ),
 
-                // FLOATING ACTION BUTTON: CENTER ON LOCATION (RIGHT)
+                /// TOGGLE LOCATION / ROUTE
                 Positioned(
                   bottom: 20,
                   right: 20,
                   child: FloatingActionButton(
-                    heroTag: 'center_location',
-                    onPressed: _centerOnCurrentLocation,
-                    tooltip: 'Center on my location',
-                    backgroundColor: Colors.blue,
-                    child: const Icon(Icons.my_location),
+                    heroTag: 'my_location',
+                    backgroundColor: _followMyLocation
+                        ? Colors.green
+                        : Colors.blue,
+                    onPressed: _toggleLocationMode,
+                    child: Icon(
+                      _followMyLocation ? Icons.navigation : Icons.my_location,
+                    ),
                   ),
                 ),
               ],
