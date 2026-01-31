@@ -26,10 +26,19 @@ class _ChooseLocationScreenState extends State<ChooseLocationScreen> {
   List<dynamic> _searchResults = [];
 
   Future<void> _searchPlace(String query) async {
-    if (query.isEmpty) return;
+    if (query.isEmpty) {
+      setState(() => _searchResults.clear());
+      return;
+    }
 
     final url =
-        'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5';
+        'https://nominatim.openstreetmap.org/search'
+        '?q=$query'
+        '&format=json'
+        '&limit=5'
+        '&countrycodes=in'
+        '&accept-language=en'
+        '&addressdetails=1';
 
     final response = await http.get(
       Uri.parse(url),

@@ -222,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Navigator.pushNamed(
                                   context,
                                   AppConstants.routeTripDetail,
-                                  arguments: {'tripName': trip.name},
+                                  arguments: {'tripId': trip.id},
                                 );
                               },
                             );

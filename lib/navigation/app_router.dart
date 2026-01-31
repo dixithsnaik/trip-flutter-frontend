@@ -33,14 +33,14 @@ class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (_) =>
-              TripDetailScreen(tripName: args?['tripName'] ?? 'TRIP NAME'),
+              TripDetailScreen(tripId: args?['tripId'] ?? 'TRIP NAME'),
         );
       case AppConstants.routeChooseLocation:
         return MaterialPageRoute(builder: (_) => const ChooseLocationScreen());
       case AppConstants.routeSplash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
       default:
-        // Unknown routes should go through splash which decides the next screen
+
         return MaterialPageRoute(builder: (_) => const SplashScreen());
     }
   }

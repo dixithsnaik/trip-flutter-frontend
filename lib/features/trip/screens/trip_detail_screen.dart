@@ -12,9 +12,9 @@ import '../bloc/trip_event.dart';
 import '../bloc/trip_state.dart';
 
 class TripDetailScreen extends StatefulWidget {
-  final String tripName;
+  final String tripId;
 
-  const TripDetailScreen({super.key, required this.tripName});
+  const TripDetailScreen({super.key, required this.tripId});
 
   @override
   State<TripDetailScreen> createState() => _TripDetailScreenState();
@@ -30,7 +30,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tripId = 'trip_1'; // In real app, get from route args
+    final tripId = widget.tripId;
 
     return BlocListener<TripBloc, TripState>(
       listener: (context, state) {
@@ -73,7 +73,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.tripName,
+                              widget.tripId,
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -170,7 +170,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                                       context,
                                       AppConstants.routeChatDetail,
                                       arguments: {
-                                        'tripName': widget.tripName,
+                                        'tripName': widget.tripId,
                                         'date': '21/10/25',
                                       },
                                     );
@@ -349,7 +349,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           return const Center(child: Text('No trip data available'));
         }
 
-        final trip = state.trips.first; // Get first trip for now
+        final trip = state.trips.first;
         final checkpoints = trip.checkpoints;
 
         if (checkpoints.isEmpty) {
