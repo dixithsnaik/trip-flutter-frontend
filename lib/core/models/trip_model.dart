@@ -51,14 +51,18 @@ class Trip {
 class Checkpoint {
   final String id;
   final String name;
-  final String location;
+  final String location; // Display address
   final String? time;
+  final double lat;
+  final double lng;
 
   Checkpoint({
     required this.id,
     required this.name,
     required this.location,
     this.time,
+    required this.lat,
+    required this.lng,
   });
 
   factory Checkpoint.fromJson(Map<String, dynamic> json) {
@@ -67,6 +71,8 @@ class Checkpoint {
       name: json['name'] as String,
       location: json['location'] as String,
       time: json['time'] as String?,
+      lat: (json['lat'] as num).toDouble(),
+      lng: (json['lng'] as num).toDouble(),
     );
   }
 
@@ -76,6 +82,8 @@ class Checkpoint {
       'name': name,
       'location': location,
       'time': time,
+      'lat': lat,
+      'lng': lng,
     };
   }
 }
