@@ -26,12 +26,11 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   @override
   void initState() {
     super.initState();
+    context.read<TripBloc>().add(LoadTripDetailsEvent(tripId: widget.tripId));
   }
 
   @override
   Widget build(BuildContext context) {
-    final tripId = widget.tripId;
-
     return BlocListener<TripBloc, TripState>(
       listener: (context, state) {
         if (state.status == TripStatus.started) {
@@ -53,273 +52,15 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           child: SafeArea(
             child: Column(
               children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.screenPadding,
-                    vertical: AppSizes.spacingMedium,
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: AppColors.textWhite,
-                        ),
-                        onPressed: () => NavigationHelper.safePop(context),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.tripId,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textWhite,
-                              ),
-                            ),
-                            const SizedBox(height: AppSizes.spacingXSmall),
-                            Row(
-                              children: [
-                                SizedBox(
-                                  width: 60,
-                                  height: 40,
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: const BoxDecoration(
-                                          color: AppColors.primaryLight,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.person,
-                                          size: 20,
-                                          color: AppColors.textWhite,
-                                        ),
-                                      ),
-                                      Positioned(
-                                        left: 20,
-                                        child: Container(
-                                          width: 32,
-                                          height: 32,
-                                          decoration: const BoxDecoration(
-                                            color: AppColors.secondary,
-                                            shape: BoxShape.circle,
-                                            border: Border.fromBorderSide(
-                                              BorderSide(
-                                                color: AppColors.primaryDark,
-                                                width: 2,
-                                              ),
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.person,
-                                            size: 20,
-                                            color: AppColors.textWhite,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Text(
-                                  '+3 more',
-                                  style: TextStyle(
-                                    color: AppColors.textWhite,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const Spacer(),
-                                TextButton.icon(
-                                  onPressed: () {},
-                                  icon: const Icon(
-                                    Icons.link,
-                                    color: AppColors.textWhite,
-                                    size: 18,
-                                  ),
-                                  label: const Text(
-                                    'Invite Friends',
-                                    style: TextStyle(
-                                      color: AppColors.textWhite,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    color: AppColors.textWhite,
-                                  ),
-                                  onPressed: () {},
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppSizes.spacingSmall),
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.chat_bubble_outline,
-                                    color: AppColors.textWhite,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppConstants.routeChatDetail,
-                                      arguments: {
-                                        'tripName': widget.tripId,
-                                        'date': '21/10/25',
-                                      },
-                                    );
-                                  },
-                                ),
-                                const Text(
-                                  'Chats',
-                                  style: TextStyle(color: AppColors.textWhite),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Tabs
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.screenPadding,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _showCheckpoints = true;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSizes.spacingSmall,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _showCheckpoints
-                                  ? AppColors.textWhite
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(
-                                AppSizes.radiusMedium,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Checkpoints',
-                                style: TextStyle(
-                                  color: _showCheckpoints
-                                      ? AppColors.primary
-                                      : AppColors.textWhite,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _showCheckpoints = false;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSizes.spacingSmall,
-                            ),
-                            decoration: BoxDecoration(
-                              color: !_showCheckpoints
-                                  ? AppColors.textWhite
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(
-                                AppSizes.radiusMedium,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Route Map',
-                                style: TextStyle(
-                                  color: !_showCheckpoints
-                                      ? AppColors.primary
-                                      : AppColors.textWhite,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildHeader(),
+                _buildTabs(),
                 const SizedBox(height: AppSizes.spacingMedium),
-                // Map/Content Area
                 Expanded(
                   child: _showCheckpoints
-                      ? _buildCheckpointsView(context)
+                      ? _buildCheckpointsView()
                       : _buildMapView(),
                 ),
-                // Bottom Actions
-                Container(
-                  padding: const EdgeInsets.all(AppSizes.screenPadding),
-                  decoration: const BoxDecoration(
-                    gradient: AppColors.headerGradient,
-                  ),
-                  child: BlocBuilder<TripBloc, TripState>(
-                    builder: (context, state) {
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: CustomButton(
-                              text: 'Cancel Trip',
-                              backgroundColor: AppColors.error,
-                              isOutlined: true,
-                              textColor: AppColors.textWhite,
-                              onPressed: state.status == TripStatus.loading
-                                  ? null
-                                  : () {
-                                      context.read<TripBloc>().add(
-                                        CancelTripEvent(tripId: tripId),
-                                      );
-                                    },
-                            ),
-                          ),
-                          const SizedBox(width: AppSizes.spacingMedium),
-                          Expanded(
-                            child: CustomButton(
-                              text: 'Start Trip',
-                              backgroundColor: AppColors.success,
-                              onPressed: state.status == TripStatus.loading
-                                  ? null
-                                  : () {
-                                      context.read<TripBloc>().add(
-                                        StartTripEvent(tripId: tripId),
-                                      );
-                                    },
-                              isLoading: state.status == TripStatus.loading,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
+                _buildBottomActions(),
               ],
             ),
           ),
@@ -328,127 +69,278 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     );
   }
 
-  Widget _buildMapView() {
-    return MapView(
-      locations: [
-        LatLng(12.2958, 76.6394),
-        LatLng(12.9784, 77.5713),
-        LatLng(13.0827, 80.2707),
-      ],
+  // ---------------- HEADER ----------------
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.screenPadding,
+        vertical: AppSizes.spacingMedium,
+      ),
+      child: BlocBuilder<TripBloc, TripState>(
+        builder: (context, state) {
+          final trip = state.selectedTrip;
+
+          return Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: AppColors.textWhite),
+                onPressed: () => NavigationHelper.safePop(context),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      trip?.name ?? 'Loading...',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textWhite,
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacingSmall),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.chat_bubble_outline,
+                            color: AppColors.textWhite,
+                          ),
+                          onPressed: trip == null
+                              ? null
+                              : () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppConstants.routeChatDetail,
+                                    arguments: {
+                                      'tripName': trip.name,
+                                      'date': trip.date,
+                                    },
+                                  );
+                                },
+                        ),
+                        const Text(
+                          'Chats',
+                          style: TextStyle(color: AppColors.textWhite),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildCheckpointsView(BuildContext context) {
+  // ---------------- TABS ----------------
+
+  Widget _buildTabs() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.screenPadding),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _showCheckpoints = true),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSizes.spacingSmall,
+                ),
+                decoration: BoxDecoration(
+                  color: _showCheckpoints
+                      ? AppColors.textWhite
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                ),
+                child: Center(
+                  child: Text(
+                    'Checkpoints',
+                    style: TextStyle(
+                      color: _showCheckpoints
+                          ? AppColors.primary
+                          : AppColors.textWhite,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _showCheckpoints = false),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSizes.spacingSmall,
+                ),
+                decoration: BoxDecoration(
+                  color: !_showCheckpoints
+                      ? AppColors.textWhite
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                ),
+                child: Center(
+                  child: Text(
+                    'Route Map',
+                    style: TextStyle(
+                      color: !_showCheckpoints
+                          ? AppColors.primary
+                          : AppColors.textWhite,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------- CHECKPOINTS ----------------
+
+  Widget _buildCheckpointsView() {
     return BlocBuilder<TripBloc, TripState>(
       builder: (context, state) {
         if (state.status == TripStatus.loading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (state.trips.isEmpty) {
-          return const Center(child: Text('No trip data available'));
+        final trip = state.selectedTrip;
+        if (trip == null) {
+          return const Center(child: Text('Trip not found'));
         }
 
-        final trip = state.trips.first;
-        final checkpoints = trip.checkpoints;
-
-        if (checkpoints.isEmpty) {
+        if (trip.checkpoints.isEmpty) {
           return const Center(child: Text('No checkpoints available'));
         }
 
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.screenPadding,
-              vertical: AppSizes.spacingMedium,
-            ),
-            child: Column(
-              children: List.generate(checkpoints.length, (index) {
-                final checkpoint = checkpoints[index];
-                final isFirst = index == 0;
-                final isLast = index == checkpoints.length - 1;
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.screenPadding,
+            vertical: AppSizes.spacingMedium,
+          ),
+          itemCount: trip.checkpoints.length,
+          itemBuilder: (context, index) {
+            final checkpoint = trip.checkpoints[index];
 
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Timeline Column
-                    Column(
-                      children: [
-                        // Top Connector Line
-                        if (!isFirst)
-                          Container(
-                            width: 2,
-                            height: 20,
-                            color: AppColors.textWhite,
-                          ),
-                        // Circle Dot
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                        ),
-                        // Bottom Connector Line
-                        if (!isLast)
-                          Container(
-                            width: 2,
-                            height: 60,
-                            color: AppColors.textWhite,
-                          ),
-                      ],
+            return Container(
+              margin: const EdgeInsets.only(bottom: AppSizes.spacingMedium),
+              padding: const EdgeInsets.all(AppSizes.spacingMedium),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      maxLines: 2,
+                      checkpoint.location,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
                     ),
-                    const SizedBox(width: AppSizes.spacingMedium),
-                    // Content Column
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          top: isFirst ? 0 : AppSizes.spacingSmall,
-                          bottom: isLast ? 0 : AppSizes.spacingMedium,
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(
-                              AppSizes.radiusSmall,
-                            ),
-                          ),
-                          padding: const EdgeInsets.all(AppSizes.spacingMedium),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                checkpoint.location,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-
-                              if (checkpoint.time != null)
-                                Text(
-                                  checkpoint.time!,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
+                  ),
+                  if (checkpoint.time != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      checkpoint.time!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
-                );
-              }),
-            ),
-          ),
+                ],
+              ),
+            );
+          },
         );
       },
+    );
+  }
+
+  // ---------------- MAP ----------------
+
+  Widget _buildMapView() {
+    return BlocBuilder<TripBloc, TripState>(
+      builder: (context, state) {
+        final trip = state.selectedTrip;
+
+        if (trip == null || trip.checkpoints.isEmpty) {
+          return const Center(child: Text('No route data'));
+        }
+
+        final locations = trip.checkpoints
+            .where((c) => c.lat != null && c.lng != null)
+            .map((c) => LatLng(c.lat!, c.lng!))
+            .toList();
+
+        return MapView(locations: locations);
+      },
+    );
+  }
+
+  // ---------------- ACTION BUTTONS ----------------
+
+  Widget _buildBottomActions() {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.screenPadding),
+      decoration: const BoxDecoration(gradient: AppColors.headerGradient),
+      child: BlocBuilder<TripBloc, TripState>(
+        builder: (context, state) {
+          return Row(
+            children: [
+              Expanded(
+                child: CustomButton(
+                  text: 'Cancel Trip',
+                  backgroundColor: AppColors.error,
+                  isOutlined: true,
+                  textColor: AppColors.textWhite,
+                  onPressed: state.status == TripStatus.loading
+                      ? null
+                      : () {
+                          context.read<TripBloc>().add(
+                            CancelTripEvent(tripId: widget.tripId),
+                          );
+                        },
+                ),
+              ),
+              const SizedBox(width: AppSizes.spacingMedium),
+              Expanded(
+                child: CustomButton(
+                  text: 'Start Trip',
+                  backgroundColor: AppColors.success,
+                  isLoading: state.status == TripStatus.loading,
+                  onPressed: state.status == TripStatus.loading
+                      ? null
+                      : () {
+                          context.read<TripBloc>().add(
+                            StartTripEvent(tripId: widget.tripId),
+                          );
+                        },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

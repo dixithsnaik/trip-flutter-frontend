@@ -6,8 +6,9 @@ enum TripStatus { initial, loading, loaded, error, started, cancelled }
 class TripState extends Equatable {
   final TripStatus status;
   final List<Trip> trips;
+  final Trip? selectedTrip;
   final String? errorMessage;
-  // Local state for trip creation
+
   final List<Checkpoint> newTripCheckpoints;
   final List<String> selectedFriends;
   final String selectedTripType;
@@ -15,6 +16,7 @@ class TripState extends Equatable {
   const TripState({
     this.status = TripStatus.initial,
     this.trips = const [],
+    this.selectedTrip,
     this.errorMessage,
     this.newTripCheckpoints = const [],
     this.selectedFriends = const [],
@@ -24,6 +26,7 @@ class TripState extends Equatable {
   TripState copyWith({
     TripStatus? status,
     List<Trip>? trips,
+    Trip? selectedTrip,
     String? errorMessage,
     List<Checkpoint>? newTripCheckpoints,
     List<String>? selectedFriends,
@@ -32,6 +35,7 @@ class TripState extends Equatable {
     return TripState(
       status: status ?? this.status,
       trips: trips ?? this.trips,
+      selectedTrip: selectedTrip ?? this.selectedTrip,
       errorMessage: errorMessage ?? this.errorMessage,
       newTripCheckpoints: newTripCheckpoints ?? this.newTripCheckpoints,
       selectedFriends: selectedFriends ?? this.selectedFriends,
@@ -40,5 +44,13 @@ class TripState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, trips, errorMessage, newTripCheckpoints, selectedFriends, selectedTripType];
+  List<Object?> get props => [
+    status,
+    trips,
+    selectedTrip,
+    errorMessage,
+    newTripCheckpoints,
+    selectedFriends,
+    selectedTripType,
+  ];
 }

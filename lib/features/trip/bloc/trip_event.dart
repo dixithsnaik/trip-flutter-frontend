@@ -17,6 +17,15 @@ class LoadTripsEvent extends TripEvent {
   List<Object> get props => [tripType];
 }
 
+class LoadTripDetailsEvent extends TripEvent {
+  final String tripId;
+
+  const LoadTripDetailsEvent({required this.tripId});
+
+  @override
+  List<Object> get props => [tripId];
+}
+
 class CreateTripEvent extends TripEvent {
   final String name;
   final String date;

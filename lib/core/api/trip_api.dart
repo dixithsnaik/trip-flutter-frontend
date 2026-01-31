@@ -114,6 +114,15 @@ class TripApi {
     return _trips.where((trip) => trip.type == type).toList();
   }
 
+  static Future<Trip?> getTripDetails(String tripId) async {
+    await Future.delayed(const Duration(seconds: 1));
+    try {
+      return _trips.firstWhere((trip) => trip.id == tripId);
+    } catch (e) {
+      return null;
+    }
+  }
+
   static Future<void> createTrip(Trip trip) async {
     await Future.delayed(const Duration(seconds: 1));
     _trips.add(trip);
