@@ -56,14 +56,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _handleRegister() {
     if (_formKey.currentState!.validate()) {
-      context.read<AuthBloc>().add(AuthRegister(
-            fullName: _fullNameController.text,
-            username: _usernameController.text,
-            phoneNumber: _phoneController.text,
-            dob: _dobController.text,
-            gender: context.read<AuthBloc>().state.selectedGender,
-            vehicle: _vehicleController.text,
-          ));
+      context.read<AuthBloc>().add(
+        AuthRegister(
+          fullName: _fullNameController.text,
+          username: _usernameController.text,
+          phoneNumber: _phoneController.text,
+          dob: _dobController.text,
+          gender: context.read<AuthBloc>().state.selectedGender,
+          vehicle: _vehicleController.text,
+        ),
+      );
     }
   }
 
@@ -76,7 +78,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         }
       },
       child: Scaffold(
-        appBar: const CustomAppBar(title: AppStrings.onboardingTitle),
+        appBar: CustomAppBar(
+          title: AppStrings.onboardingTitle,
+          onBackPressed: () {
+            Navigator.pushReplacementNamed(context, AppConstants.routeLogin);
+          },
+        ),
         body: BackgroundWidget(
           child: SafeArea(
             child: SingleChildScrollView(
@@ -315,10 +322,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             );
                             return GestureDetector(
                               onTap: () => context.read<AuthBloc>().add(
-                                    AuthToggleInterest(
-                                      interest['name'] as String,
-                                    ),
-                                  ),
+                                AuthToggleInterest(interest['name'] as String),
+                              ),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppSizes.spacingMedium,

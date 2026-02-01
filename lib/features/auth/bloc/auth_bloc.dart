@@ -1,4 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tpconnect/core/constants/app_constants.dart';
 import '../../../../core/models/user_model.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
@@ -22,11 +24,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onLogin(LoginEvent event, Emitter<AuthState> emit) async {
     emit(state.copyWith(status: AuthStatus.loading));
-    await Future.delayed(const Duration(seconds: 1)); // Simulate latency
-    
+    await Future.delayed(const Duration(seconds: 1));
+
     // Mock login success
     final user = User(
-      id: '123', 
+      id: '123',
       fullName: 'Test User',
       username: 'testuser',
       phoneNumber: '9876543210',
@@ -34,7 +36,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       gender: 'Male',
       interests: [],
     );
-    
+
+    // 🔹 Save login locally
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyIsLoggedIn, true);
+
     emit(state.copyWith(status: AuthStatus.authenticated, user: user));
   }
 
@@ -62,6 +68,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       interests: state.selectedInterests,
     );
 
+    // 🔹 Save locally
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyIsLoggedIn, true);
+    await prefs.setBool(AppConstants.keyIsOnboarded, true);
+
     emit(state.copyWith(status: AuthStatus.authenticated, user: user));
   }
 
@@ -73,33 +84,47 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     // Let's assume generic signup leads to authenticated for this mock unless Verify is required.
     // If we follow typical flow: Signup -> (maybe Verify Email) -> Authenticated.
     // But existing UI (SignUpScreen) listens for OtpSent.
-    emit(state.copyWith(status: AuthStatus.authenticated, email: event.email)); 
+    emit(state.copyWith(status: AuthStatus.authenticated, email: event.email));
   }
 
-  Future<void> _onVerifyEmail(VerifyEmailEvent event, Emitter<AuthState> emit) async {
+  Future<void> _onVerifyEmail(
+    VerifyEmailEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(state.copyWith(status: AuthStatus.loading));
     await Future.delayed(const Duration(seconds: 1));
     emit(state.copyWith(status: AuthStatus.otpSent, email: event.email));
   }
 
-  Future<void> _onVerifyOtp(VerifyOtpEvent event, Emitter<AuthState> emit) async {
+  Future<void> _onVerifyOtp(
+    VerifyOtpEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(state.copyWith(status: AuthStatus.loading));
     await Future.delayed(const Duration(seconds: 1));
     if (event.otp == "123456") {
-       emit(state.copyWith(status: AuthStatus.otpVerified)); 
+      emit(state.copyWith(status: AuthStatus.otpVerified));
     } else {
-       emit(state.copyWith(status: AuthStatus.error, errorMessage: "Invalid OTP"));
+      emit(
+        state.copyWith(status: AuthStatus.error, errorMessage: "Invalid OTP"),
+      );
     }
   }
 
-  Future<void> _onResendOtp(ResendOtpEvent event, Emitter<AuthState> emit) async {
-     // Just re-emit otpSent to trigger snackbar if needed, or maintain current state but show feedback
-     emit(state.copyWith(status: AuthStatus.otpSent));
+  Future<void> _onResendOtp(
+    ResendOtpEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    // Just re-emit otpSent to trigger snackbar if needed, or maintain current state but show feedback
+    emit(state.copyWith(status: AuthStatus.otpSent));
   }
 
-  Future<void> _onResetPassword(ResetPasswordEvent event, Emitter<AuthState> emit) async {
+  Future<void> _onResetPassword(
+    ResetPasswordEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(state.copyWith(status: AuthStatus.loading));
-     await Future.delayed(const Duration(seconds: 1));
-     emit(state.copyWith(status: AuthStatus.passwordResetSuccess));
+    await Future.delayed(const Duration(seconds: 1));
+    emit(state.copyWith(status: AuthStatus.passwordResetSuccess));
   }
 }

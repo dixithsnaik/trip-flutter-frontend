@@ -4,7 +4,6 @@ import 'package:lottie/lottie.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/logo_widget.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,7 +16,9 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuth();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuth();
+    });
   }
 
   Future<void> _checkAuth() async {
@@ -27,15 +28,19 @@ class _SplashScreenState extends State<SplashScreen> {
 
     await Future.delayed(const Duration(milliseconds: 1500));
 
-    Navigator.pushReplacementNamed(context, AppConstants.routeHome);
+    String nextRoute;
+    if (isLoggedIn) {
+      nextRoute = AppConstants.routeHome;
+    } else if (!isLoggedIn) {
+      nextRoute = AppConstants.routeLogin;
+    } else if (!isOnboarded) {
+      nextRoute = AppConstants.routeOnboarding;
+    } else {
+      nextRoute = AppConstants.routeOnboarding;
+    }
 
-    // if (isLoggedIn) {
-    //   Navigator.pushReplacementNamed(context, AppConstants.routeHome);
-    // } else if (!isOnboarded) {
-    //   Navigator.pushReplacementNamed(context, AppConstants.routeOnboarding);
-    // } else {
-    //   Navigator.pushReplacementNamed(context, AppConstants.routeLogin);
-    // }
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, nextRoute);
   }
 
   @override

@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:tpconnect/core/constants/app_constants.dart';
+import 'package:tpconnect/features/auth/screens/login_screen.dart';
+import 'package:tpconnect/features/auth/screens/otp_screen.dart';
+import 'package:tpconnect/features/auth/screens/reset_password_screen.dart';
+import 'package:tpconnect/features/auth/screens/signup_screen.dart';
+import 'package:tpconnect/features/auth/screens/verify_email_screen.dart';
+import 'package:tpconnect/features/onboarding/screens/onboarding_screen.dart';
 import 'package:tpconnect/features/profile/screens/profile_screen.dart';
 import 'package:tpconnect/features/trip/screens/join_trip_screen.dart';
 import '../features/home/screens/main_screen.dart';
@@ -13,7 +19,24 @@ import '../features/auth/screens/splash_screen.dart';
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
-      // ...
+      case AppConstants.routeLogin:
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
+      case AppConstants.routeSignUp:
+        return MaterialPageRoute(builder: (_) => const SignUpScreen());
+      case AppConstants.routeVerifyEmail:
+        return MaterialPageRoute(builder: (_) => const VerifyEmailScreen());
+      case AppConstants.routeOtp:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => OtpScreen(email: args?['email'] ?? ''),
+        );
+      case AppConstants.routeResetPassword:
+        return MaterialPageRoute(builder: (_) => const ResetPasswordScreen());
+
+      // Onboarding
+      case AppConstants.routeOnboarding:
+        return MaterialPageRoute(builder: (_) => const OnboardingScreen());
+
       case AppConstants.routeHome:
         return MaterialPageRoute(builder: (_) => const MainScreen());
       case AppConstants.routeProfile:
