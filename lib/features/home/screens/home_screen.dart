@@ -245,12 +245,72 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, AppConstants.routePlanTrip);
+      floatingActionButton: Builder(
+        builder: (fabContext) {
+          return FloatingActionButton(
+            backgroundColor: AppColors.primary,
+            child: const Icon(Icons.add, color: AppColors.textWhite),
+            onPressed: () async {
+              final RenderBox button =
+                  fabContext.findRenderObject() as RenderBox;
+              final RenderBox overlay =
+                  Overlay.of(fabContext).context.findRenderObject()
+                      as RenderBox;
+
+              final Offset fabPosition = button.localToGlobal(
+                Offset.zero,
+                ancestor: overlay,
+              );
+              final Offset fabBottomRight = Offset(
+                fabPosition.dx + button.size.width,
+                fabPosition.dy + button.size.height,
+              );
+
+              final Rect fabRect = Rect.fromLTWH(
+                fabBottomRight.dx - 60,
+                fabBottomRight.dy - 180,
+                button.size.width,
+                button.size.height,
+              );
+
+              final result = await showMenu<String>(
+                context: fabContext,
+                position: RelativeRect.fromRect(
+                  fabRect,
+                  Offset.zero & overlay.size,
+                ),
+                items: const [
+                  PopupMenuItem(
+                    value: 'create',
+                    child: Row(
+                      children: [
+                        Icon(Icons.trip_origin_sharp, size: 18),
+                        SizedBox(width: 8),
+                        Text('Create Trip'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'join',
+                    child: Row(
+                      children: [
+                        Icon(Icons.group_add, size: 18),
+                        SizedBox(width: 8),
+                        Text('Join Trip'),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+
+              if (result == 'create') {
+                Navigator.pushNamed(fabContext, AppConstants.routePlanTrip);
+              } else if (result == 'join') {
+                Navigator.pushNamed(fabContext, AppConstants.routeJoinTrip);
+              }
+            },
+          );
         },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: AppColors.textWhite),
       ),
     );
   }

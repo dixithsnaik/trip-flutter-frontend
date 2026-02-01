@@ -19,6 +19,7 @@ class AppConstants {
   static const String routeChats = '/chats';
   static const String routeChatDetail = '/chat-detail';
   static const String routePlanTrip = '/plan-trip';
+  static const String routeJoinTrip = '/join-trip';
   static const String routeTripDetail = '/trip-detail';
   static const String routeChooseLocation = '/choose-location';
 

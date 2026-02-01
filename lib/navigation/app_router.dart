@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tpconnect/core/constants/app_constants.dart';
 import 'package:tpconnect/features/profile/screens/profile_screen.dart';
+import 'package:tpconnect/features/trip/screens/join_trip_screen.dart';
 import '../features/home/screens/main_screen.dart';
 import '../features/chat/screens/chats_screen.dart';
 import '../features/chat/screens/chat_detail_screen.dart';
@@ -29,6 +30,8 @@ class AppRouter {
         );
       case AppConstants.routePlanTrip:
         return MaterialPageRoute(builder: (_) => const PlanTripScreen());
+      case AppConstants.routeJoinTrip:
+        return MaterialPageRoute(builder: (_) => JoinTripScreen());
       case AppConstants.routeTripDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
@@ -40,7 +43,6 @@ class AppRouter {
       case AppConstants.routeSplash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
       default:
-
         return MaterialPageRoute(builder: (_) => const SplashScreen());
     }
   }
