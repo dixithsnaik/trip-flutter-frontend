@@ -7,6 +7,7 @@ class Trip {
   final String hostId;
   final List<String> participants;
   final String type; // 'Group' or 'Solo'
+  final String? inviteCode;
 
   Trip({
     required this.id,
@@ -17,6 +18,7 @@ class Trip {
     required this.hostId,
     required this.participants,
     required this.type,
+    this.inviteCode,
   });
 
   factory Trip.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class Trip {
       hostId: json['hostId'] as String,
       participants: List<String>.from(json['participants'] ?? []),
       type: json['type'] as String,
+      inviteCode: json['inviteCode'] as String?,
     );
   }
 
@@ -44,6 +47,7 @@ class Trip {
       'hostId': hostId,
       'participants': participants,
       'type': type,
+      'inviteCode': inviteCode,
     };
   }
 }

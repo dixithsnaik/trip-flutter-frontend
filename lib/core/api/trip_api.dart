@@ -10,6 +10,7 @@ class TripApi {
       name: 'Manali Road Trip',
       date: '15 Aug 2024',
       description: 'A fun road trip to the mountains.',
+      inviteCode: "manali2024",
       checkpoints: [
         Checkpoint(
           id: 'c1',
@@ -45,6 +46,7 @@ class TripApi {
       name: 'Goa Beach Party',
       date: '20 Dec 2024',
       description: 'Sun, sand and sea.',
+      inviteCode: "goaParty24",
       checkpoints: [
         Checkpoint(
           id: 'c4',

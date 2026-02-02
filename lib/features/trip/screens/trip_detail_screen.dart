@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:tpconnect/features/trip/widgets/map_view.dart';
@@ -70,64 +71,140 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   }
 
   // ---------------- HEADER ----------------
-
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.screenPadding,
-        vertical: AppSizes.spacingMedium,
+      padding: const EdgeInsets.only(
+        left: AppSizes.screenPadding,
+        right: AppSizes.screenPadding,
+        top: AppSizes.spacingLarge,
+        bottom: AppSizes.spacingMedium,
       ),
       child: BlocBuilder<TripBloc, TripState>(
         builder: (context, state) {
           final trip = state.selectedTrip;
 
-          return Row(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.textWhite),
-                onPressed: () => NavigationHelper.safePop(context),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+              /// 🔙 Back + Title
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: AppColors.textWhite,
+                    ),
+                    onPressed: () => NavigationHelper.safePop(context),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
                       trip?.name ?? 'Loading...',
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textWhite,
                       ),
                     ),
-                    const SizedBox(height: AppSizes.spacingSmall),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(
+                  ),
+                  const SizedBox(width: 48), // balances back button width
+                ],
+              ),
+
+              const SizedBox(height: AppSizes.spacingMedium),
+
+              /// 🎟 Invite Code + 💬 Chat
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  /// Invite Code
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          trip?.inviteCode ?? '----',
+                          style: const TextStyle(
+                            color: AppColors.textWhite,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(
+                          Icons.copy,
+                          color: AppColors.textWhite,
+                          size: 20,
+                        ),
+                        onPressed: trip?.inviteCode == null
+                            ? null
+                            : () {
+                                Clipboard.setData(
+                                  ClipboardData(text: trip?.inviteCode ?? ''),
+                                );
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Invite code copied'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                      ),
+                    ],
+                  ),
+
+                  /// Chat Button
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: trip == null
+                        ? null
+                        : () {
+                            Navigator.pushNamed(
+                              context,
+                              AppConstants.routeChatDetail,
+                              arguments: {
+                                'tripName': trip.name,
+                                'date': trip.date,
+                              },
+                            );
+                          },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(
                             Icons.chat_bubble_outline,
                             color: AppColors.textWhite,
+                            size: 20,
                           ),
-                          onPressed: trip == null
-                              ? null
-                              : () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    AppConstants.routeChatDetail,
-                                    arguments: {
-                                      'tripName': trip.name,
-                                      'date': trip.date,
-                                    },
-                                  );
-                                },
-                        ),
-                        const Text(
-                          'Chats',
-                          style: TextStyle(color: AppColors.textWhite),
-                        ),
-                      ],
+                          SizedBox(width: 4),
+                          Text(
+                            'Chats',
+                            style: TextStyle(
+                              color: AppColors.textWhite,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           );

@@ -62,7 +62,6 @@ class TripBloc extends Bloc<TripEvent, TripState> {
 
     try {
       final trip = await TripApi.getTripDetails(event.tripId);
-
       if (trip != null) {
         emit(state.copyWith(status: TripStatus.loaded, selectedTrip: trip));
       } else {
@@ -95,6 +94,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
         hostId: 'current_user_id',
         participants: state.selectedFriends,
         type: event.type,
+        inviteCode: "abcd1234", // In real app, generate or get from backend
       );
 
       await TripApi.createTrip(newTrip);
