@@ -218,49 +218,37 @@ class _MapViewState extends State<MapView> {
 
                 /// ZOOM CONTROLS
                 Positioned(
-                  bottom: 20,
-                  left: 20,
+                  left: 12,
+                  bottom: 60,
                   child: Column(
                     children: [
-                      FloatingActionButton(
-                        heroTag: 'zoom_in',
-                        mini: true,
-                        backgroundColor: Colors.blue,
-                        onPressed: _zoomIn,
-                        child: const Icon(Icons.add),
-                      ),
-                      const SizedBox(height: 6),
-                      FloatingActionButton(
-                        heroTag: 'zoom_out',
-                        mini: true,
-                        backgroundColor: Colors.blue,
-                        onPressed: _zoomOut,
-                        child: const Icon(Icons.remove),
-                      ),
+                      _mapButton(Icons.add, _zoomIn),
+                      const SizedBox(height: 10),
+                      _mapButton(Icons.remove, _zoomOut),
                     ],
                   ),
                 ),
 
-                /// TOGGLE LOCATION / ROUTE
+                /// 📍 RECENTER (RIGHT)
                 Positioned(
-                  bottom: 20,
-                  right: 20,
-                  child: FloatingActionButton(
-                    heroTag: 'my_location',
-                    backgroundColor: _followMyLocation
-                        ? Colors.green
-                        : Colors.blue,
-                    onPressed: _toggleLocationMode,
-                    child: Icon(
-                      _followMyLocation ? Icons.navigation : Icons.my_location,
-                    ),
-                  ),
+                  right: 12,
+                  bottom: 60,
+                  child: _mapButton(Icons.my_location, _toggleLocationMode),
                 ),
               ],
             ),
           );
         },
       ),
+    );
+  }
+
+  Widget _mapButton(IconData icon, VoidCallback onTap) {
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      elevation: 4,
+      child: IconButton(icon: Icon(icon), onPressed: onTap),
     );
   }
 }

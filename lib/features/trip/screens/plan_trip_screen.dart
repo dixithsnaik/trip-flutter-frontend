@@ -412,4 +412,5 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
       ),
     );
   }
+  
 }
