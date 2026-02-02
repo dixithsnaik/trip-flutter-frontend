@@ -22,6 +22,7 @@ class AppConstants {
   static const String routeJoinTrip = '/join-trip';
   static const String routeTripDetail = '/trip-detail';
   static const String routeChooseLocation = '/choose-location';
+  static const String routeTripInAction = '/trip-in-action';
 
   // Storage Keys
   static const String keyIsLoggedIn = 'is_logged_in';

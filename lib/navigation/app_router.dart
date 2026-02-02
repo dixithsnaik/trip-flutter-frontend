@@ -8,6 +8,7 @@ import 'package:tpconnect/features/auth/screens/verify_email_screen.dart';
 import 'package:tpconnect/features/onboarding/screens/onboarding_screen.dart';
 import 'package:tpconnect/features/profile/screens/profile_screen.dart';
 import 'package:tpconnect/features/trip/screens/join_trip_screen.dart';
+import 'package:tpconnect/features/trip/screens/trip_in_action.dart';
 import '../features/home/screens/main_screen.dart';
 import '../features/chat/screens/chats_screen.dart';
 import '../features/chat/screens/chat_detail_screen.dart';
@@ -63,6 +64,8 @@ class AppRouter {
         );
       case AppConstants.routeChooseLocation:
         return MaterialPageRoute(builder: (_) => const ChooseLocationScreen());
+      case AppConstants.routeTripInAction:
+        return MaterialPageRoute(builder: (_) => const TripInAction());
       case AppConstants.routeSplash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
       default:
