@@ -332,7 +332,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       ? null
                       : () {
                           context.read<TripBloc>().add(
-                            StartTripEvent(tripId: widget.tripId),
+                            StartTripEvent(
+                              tripId: widget.tripId,
+                              context: context,
+                            ),
                           );
                         },
                 ),
@@ -343,5 +346,4 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       ),
     );
   }
-  
 }

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import '../../../../core/models/trip_model.dart';
 
 abstract class TripEvent extends Equatable {
@@ -77,9 +78,10 @@ class SelectTripTypeEvent extends TripEvent {
 
 class StartTripEvent extends TripEvent {
   final String tripId;
-  const StartTripEvent({required this.tripId});
+  final BuildContext context;
+  const StartTripEvent({required this.tripId, required this.context});
   @override
-  List<Object> get props => [tripId];
+  List<Object> get props => [tripId, context];
 }
 
 class CancelTripEvent extends TripEvent {

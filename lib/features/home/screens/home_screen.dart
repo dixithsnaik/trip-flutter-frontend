@@ -208,7 +208,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         }
                         return ListView.builder(
-                          padding: const EdgeInsets.all(AppSizes.screenPadding),
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSizes.screenPadding,
+                            AppSizes.screenPadding,
+                            AppSizes.screenPadding,
+                            AppSizes.screenPadding +
+                                AppSizes.screenPaddingLarge,
+                          ),
                           itemCount: state.trips.length,
                           itemBuilder: (context, index) {
                             final trip = state.trips[index];

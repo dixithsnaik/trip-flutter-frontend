@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/api/trip_api.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/models/trip_model.dart';
 import 'trip_event.dart';
 import 'trip_state.dart';
@@ -13,6 +15,23 @@ class TripBloc extends Bloc<TripEvent, TripState> {
     on<ToggleTripFriendEvent>(_onToggleFriend);
     on<SelectTripTypeEvent>(_onSelectTripType);
     on<LoadTripDetailsEvent>(_onLoadTripDetails);
+    on<StartTripEvent>(_onStartTrip);
+  }
+  Future<void> _onStartTrip(
+    StartTripEvent event,
+    Emitter<TripState> emit,
+  ) async {
+    emit(state.copyWith(status: TripStatus.loading));
+    try {
+      // await TripApi.startTrip(event.tripId);
+      emit(state.copyWith(status: TripStatus.loaded));
+      // Navigate to routeTripInAction
+      Navigator.pushNamed(event.context, AppConstants.routeTripInAction);
+    } catch (e) {
+      emit(
+        state.copyWith(status: TripStatus.error, errorMessage: e.toString()),
+      );
+    }
   }
 
   Future<void> _onLoadTrips(
