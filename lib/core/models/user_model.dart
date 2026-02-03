@@ -1,3 +1,5 @@
+import 'package:latlong2/latlong.dart';
+
 class User {
   final String id;
   final String fullName;
@@ -44,4 +46,18 @@ class User {
       'interests': interests,
     };
   }
+}
+
+class CrewLocation {
+  final String userId;
+  final String name;
+  final LatLng position;
+  final bool isMe;
+
+  CrewLocation({
+    required this.userId,
+    required this.name,
+    required this.position,
+    this.isMe = false,
+  });
 }

@@ -8,6 +8,8 @@ class UserProfile {
   final String dateOfBirth;
   final String gender;
   final String? vehicleName;
+  final int followersCount;
+  final int followedTripsCount;
   final List<String> travelInterests;
 
   const UserProfile({
@@ -19,6 +21,8 @@ class UserProfile {
     required this.gender,
     this.vehicleName,
     required this.travelInterests,
+    required this.followersCount,
+    required this.followedTripsCount,
   });
 }
 
@@ -59,4 +63,3 @@ class ProfileError extends ProfileState {
   @override
   List<Object?> get props => [message];
 }
-

@@ -8,12 +8,15 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<UpdateProfileEvent>(_onUpdateProfile);
   }
 
-  void _onLoadProfile(LoadProfileEvent event, Emitter<ProfileState> emit) async {
+  void _onLoadProfile(
+    LoadProfileEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
     emit(ProfileLoading());
-    
+
     // Simulate API call
     await Future.delayed(const Duration(seconds: 1));
-    
+
     // Mock data
     const profile = UserProfile(
       fullName: 'Dixith S Naik',
@@ -24,22 +27,27 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       gender: 'Male',
       vehicleName: 'Honda CBR',
       travelInterests: ['Solo Rider', 'Touring Enthusiast'],
+      followersCount: 120,
+      followedTripsCount: 45,
     );
-    
+
     emit(ProfileLoaded(profile: profile));
   }
 
-  void _onUpdateProfile(UpdateProfileEvent event, Emitter<ProfileState> emit) async {
+  void _onUpdateProfile(
+    UpdateProfileEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
     emit(ProfileLoading());
-    
+
     // Simulate API call
     await Future.delayed(const Duration(seconds: 1));
-    
+
     if (event.fullName.isEmpty || event.username.isEmpty) {
       emit(const ProfileError(message: 'Please fill required fields'));
       return;
     }
-    
+
     final profile = UserProfile(
       fullName: event.fullName,
       username: event.username,
@@ -49,9 +57,10 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       gender: event.gender,
       vehicleName: event.vehicleName,
       travelInterests: event.travelInterests,
+      followersCount: 120, // Mock data
+      followedTripsCount: 45, // Mock data
     );
-    
+
     emit(ProfileUpdated(profile: profile));
   }
 }
-
